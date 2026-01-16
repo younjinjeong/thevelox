@@ -142,8 +142,8 @@ export class GoogleCloudStorageProvider implements StorageProvider {
 
     return {
       contentType: metadata.contentType,
-      contentLength: parseInt(metadata.size, 10),
-      customMetadata: metadata.metadata,
+      contentLength: parseInt(String(metadata.size), 10),
+      customMetadata: metadata.metadata as any,
       etag: metadata.etag,
       lastModified: new Date(metadata.updated),
     };

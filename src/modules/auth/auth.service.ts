@@ -103,13 +103,13 @@ export class AuthService {
     // Create new user from OAuth data
     this.logger.log(`Creating new user from ${oauthData.provider} OAuth: ${oauthData.email}`);
 
-    user = await this.usersService.create({
+    user = (await this.usersService.create({
       name: oauthData.name,
       username: oauthData.displayName,
       email: oauthData.email,
       password: this.generateRandomPassword(), // Random password for OAuth users
       locale: 'en-US',
-    });
+    })) as any;
 
     return user;
   }

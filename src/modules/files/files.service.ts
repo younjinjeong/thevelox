@@ -75,12 +75,12 @@ export class FilesService {
     try {
       await this.storageService.upload(box.storageContainerName, objectKey, fileStream, {
         contentType: mimeType,
-        metadata: {
+        customMetadata: {
           originalName: fileName,
           boxId: boxId,
           uploadUser: userId,
           uploadDate: new Date().toISOString(),
-        },
+        } as any,
       });
 
       this.logger.log(`Uploaded file to storage: ${objectKey} (${fileSize} bytes)`);
@@ -162,13 +162,13 @@ export class FilesService {
     try {
       await this.storageService.upload(file.container, objectKey, fileStream, {
         contentType: file.mime,
-        metadata: {
+        customMetadata: {
           originalName: file.name,
           fileId: fileId,
           versionId: versionId,
           uploadUser: userId,
           uploadDate: new Date().toISOString(),
-        },
+        } as any,
       });
 
       this.logger.log(`Uploaded file version to storage: ${objectKey} (${fileSize} bytes)`);

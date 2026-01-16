@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone:*)",
+      "Bash(node --version:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd modernization documentation\n\n- Add CLAUDE.md with codebase overview and architecture\n- Add comprehensive MODERNIZATION_PLAN.md with 10-phase roadmap\n- Plan includes multi-cloud storage abstraction layer\n- Covers upgrade path from Node 0.8.x to 20.x LTS\n- Includes security, testing, and deployment strategies\nEOF\n\\)\")"
+    ]
+  }
+}

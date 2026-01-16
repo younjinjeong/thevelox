@@ -1,3 +1,4 @@
+# Legacy ignores
 .project
 .profile
 .npmignore
@@ -19,3 +20,39 @@ node_modules/
 temp/
 log/
 npm-debug.log
+
+# Modern development
+*.log
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build
+dist/
+build/
+out/
+
+# Coverage
+coverage/
+.nyc_output
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Misc
+*.tmp
+*.pid
+*.seed
+*.pid.lock
+uploads/

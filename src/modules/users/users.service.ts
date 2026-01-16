@@ -307,4 +307,27 @@ export class UsersService {
   private generateUserId(): string {
     return `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   }
+
+  /**
+   * Validate user password
+   */
+  async validatePassword(user: UserDocument, password: string): Promise<boolean> {
+    return bcrypt.compare(password, user.password);
+  }
+
+  /**
+   * Update user's used storage size
+   */
+  async updateUsedSize(userId: string, sizeDelta: number): Promise<void> {
+    const user = await this.userModel.findById(userId).exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    user.usedSize = Math.max(0, user.usedSize + sizeDelta);
+    await user.save();
+
+    this.logger.log(`Updated used size for user ${userId}: ${sizeDelta > 0 ? '+' : ''}${sizeDelta} bytes`);
+  }
 }

@@ -13,7 +13,7 @@ import { configValidationSchema } from './config/validation';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { BoxesModule } from './modules/boxes/boxes.module';
-// import { FilesModule } from './modules/files/files.module';
+import { FilesModule } from './modules/files/files.module';
 import { StorageModule } from './modules/storage/storage.module';
 // import { RealtimeModule } from './modules/realtime/realtime.module';
 
@@ -62,7 +62,7 @@ import { StorageModule } from './modules/storage/storage.module';
     AuthModule,
     UsersModule,
     BoxesModule,
-    // FilesModule,
+    FilesModule,
     StorageModule,
     // RealtimeModule,
   ],

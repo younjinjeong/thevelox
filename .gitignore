@@ -56,3 +56,16 @@ coverage/
 *.seed
 *.pid.lock
 uploads/
+
+# Claude Code
+.claude/
+*.claude.md
+.claude_history
+claude_settings.json
+.claude/settings.local.json
+
+# Test results
+test-results/
+playwright-report/
+playwright/.cache/
+e2e/test-results/

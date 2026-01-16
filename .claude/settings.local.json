@@ -8,7 +8,12 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd modernization documentation\n\n- Add CLAUDE.md with codebase overview and architecture\n- Add comprehensive MODERNIZATION_PLAN.md with 10-phase roadmap\n- Plan includes multi-cloud storage abstraction layer\n- Covers upgrade path from Node 0.8.x to 20.x LTS\n- Includes security, testing, and deployment strategies\nEOF\n\\)\")",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nPhase 1: Foundation & Infrastructure Setup\n\nImplemented Phase 1 of the modernization plan:\n\n✨ Core Infrastructure\n- Initialize TypeScript configuration with strict mode\n- Set up ESLint and Prettier for code quality\n- Create NestJS project structure\n- Configure environment-based settings with validation\n\n🔧 Configuration System\n- Environment configuration with Joi validation\n- Support for development/production environments\n- Secure secrets management pattern\n- Multi-storage provider configuration\n\n📦 Dependencies\n- Node.js 20.x LTS requirement\n- NestJS 10.x framework\n- Mongoose 8.x for MongoDB\n- Socket.IO 4.x for WebSocket\n- AWS SDK v3 and Google Cloud Storage SDK\n\n🗄️ Storage Abstraction Layer\n- StorageProvider interface for multi-cloud support\n- Factory pattern for provider selection\n- StorageService for unified API\n\n✅ Implemented Providers:\n- AWS S3 \\(fully functional\\)\n- Google Cloud Storage \\(fully functional\\)\n- OpenStack Swift \\(interface ready, migration pending\\)\n\n📁 Project Structure:\n- src/config/ - Configuration and validation\n- src/modules/storage/ - Storage abstraction layer\n- src/common/ - Shared utilities \\(structure only\\)\n- src/modules/ - Feature modules \\(structure only\\)\n\n📝 Documentation:\n- GETTING_STARTED.md - Setup and development guide\n- .env.example - Environment configuration template\n- Inline code documentation\n\n🎯 Next Steps:\n- Migrate OpenStack Swift implementation\n- Implement authentication module\n- Create user management module\n- Set up database models with Mongoose 8.x\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm i:*)",
+      "Bash(ls:*)",
+      "Bash(chmod:*)",
+      "Bash(bash scripts/security-check.sh:*)"
     ]
   }
 }

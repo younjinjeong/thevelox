@@ -10,7 +10,7 @@ import configuration from './config/configuration';
 import { configValidationSchema } from './config/validation';
 
 // Modules
-// import { AuthModule } from './modules/auth/auth.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 // import { BoxesModule } from './modules/boxes/boxes.module';
 // import { FilesModule } from './modules/files/files.module';
@@ -59,7 +59,7 @@ import { StorageModule } from './modules/storage/storage.module';
     TerminusModule,
 
     // Feature modules
-    // AuthModule,
+    AuthModule,
     UsersModule,
     // BoxesModule,
     // FilesModule,

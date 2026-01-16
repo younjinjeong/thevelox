@@ -21,9 +21,13 @@ import {
   ChangePasswordDto,
 } from './dto/update-user.dto';
 
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
+
 @ApiTags('users')
 @Controller('users')
-// @UseGuards(JwtAuthGuard) // Will enable after auth module is created
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

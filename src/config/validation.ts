@@ -22,6 +22,11 @@ export const configValidationSchema = Joi.object({
   JWT_EXPIRATION: Joi.string().default('15m'),
   JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
 
+  // Google OAuth
+  GOOGLE_CLIENT_ID: Joi.string().required(),
+  GOOGLE_CLIENT_SECRET: Joi.string().required(),
+  GOOGLE_CALLBACK_URL: Joi.string().uri().optional(),
+
   // Storage Provider
   STORAGE_PROVIDER: Joi.string()
     .valid('openstack', 's3', 'gcs')

@@ -113,6 +113,7 @@ async function bootstrap() {
       .addTag('boxes', 'Box/project management and collaboration')
       .addTag('files', 'File operations - upload, download, version control')
       .addTag('storage', 'Storage provider operations')
+      .addTag('notifications', 'User notifications and alerts')
       .addServer('http://localhost:3000', 'Local development server')
       .addServer('https://api.velox.com', 'Production server')
       .build();

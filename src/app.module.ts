@@ -17,6 +17,8 @@ import { BoxesModule } from './modules/boxes/boxes.module';
 import { FilesModule } from './modules/files/files.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ActivityModule } from './modules/activity/activity.module';
 
 @Module({
   imports: [
@@ -67,6 +69,8 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
     FilesModule,
     StorageModule,
     RealtimeModule,
+    NotificationsModule,
+    ActivityModule,
   ],
   controllers: [],
   providers: [],

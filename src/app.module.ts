@@ -10,6 +10,7 @@ import configuration from './config/configuration';
 import { configValidationSchema } from './config/validation';
 
 // Modules
+import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { BoxesModule } from './modules/boxes/boxes.module';
@@ -57,6 +58,7 @@ import { StorageModule } from './modules/storage/storage.module';
 
     // Health checks
     TerminusModule,
+    HealthModule,
 
     // Feature modules
     AuthModule,

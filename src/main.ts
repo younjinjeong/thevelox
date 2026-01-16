@@ -7,6 +7,8 @@ import * as compression from 'compression';
 import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   // Create Winston logger
@@ -69,6 +71,12 @@ async function bootstrap() {
     }),
   );
 
+  // Global exception filter
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Global interceptors
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
   // API prefix
   app.setGlobalPrefix('api/v1');
 
@@ -76,25 +84,66 @@ async function bootstrap() {
   if (nodeEnv !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Velox API')
-      .setDescription('Enterprise Cloud Storage API - Modernized')
+      .setDescription(
+        'Enterprise Cloud Storage API - Modernized with NestJS\n\n' +
+        'Features:\n' +
+        '- JWT Authentication with Google OAuth\n' +
+        '- Multi-cloud storage (OpenStack Swift, AWS S3, Google Cloud Storage)\n' +
+        '- Box/Project management with team collaboration\n' +
+        '- File upload, download, versioning\n' +
+        '- User quota management\n' +
+        '- Full CRUD operations with soft delete\n' +
+        '- Advanced search and filtering\n',
+      )
       .setVersion('2.0')
-      .addBearerAuth()
-      .addTag('auth', 'Authentication endpoints')
-      .addTag('users', 'User management')
-      .addTag('boxes', 'Box/project management')
-      .addTag('files', 'File operations')
-      .addTag('storage', 'Storage operations')
+      .setContact('Velox Team', 'https://github.com/yourusername/velox', 'support@velox.com')
+      .setLicense('MIT', 'https://opensource.org/licenses/MIT')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter your JWT token',
+        },
+        'JWT',
+      )
+      .addTag('health', 'Health check endpoints')
+      .addTag('auth', 'Authentication and authorization')
+      .addTag('users', 'User management and profile')
+      .addTag('boxes', 'Box/project management and collaboration')
+      .addTag('files', 'File operations - upload, download, version control')
+      .addTag('storage', 'Storage provider operations')
+      .addServer('http://localhost:3000', 'Local development server')
+      .addServer('https://api.velox.com', 'Production server')
       .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+    const document = SwaggerModule.createDocument(app, config, {
+      deepScanRoutes: true,
+    });
+
+    SwaggerModule.setup('api/docs', app, document, {
+      customSiteTitle: 'Velox API Documentation',
+      customCss: '.swagger-ui .topbar { display: none }',
+      swaggerOptions: {
+        persistAuthorization: true,
+        docExpansion: 'none',
+        filter: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+      },
+    });
+
+    logger.log(`API Documentation available at: http://localhost:${port}/api/docs`, 'Bootstrap');
   }
 
   await app.listen(port);
 
-  logger.log(`Application is running on: http://localhost:${port}`, 'Bootstrap');
-  logger.log(`API Documentation: http://localhost:${port}/api/docs`, 'Bootstrap');
-  logger.log(`Environment: ${nodeEnv}`, 'Bootstrap');
+  logger.log(`============================================`, 'Bootstrap');
+  logger.log(`🚀 Application is running on: http://localhost:${port}`, 'Bootstrap');
+  logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`, 'Bootstrap');
+  logger.log(`❤️  Health Check: http://localhost:${port}/api/v1/health`, 'Bootstrap');
+  logger.log(`🌍 Environment: ${nodeEnv}`, 'Bootstrap');
+  logger.log(`============================================`, 'Bootstrap');
 }
 
 bootstrap();

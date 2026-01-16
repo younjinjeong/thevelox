@@ -113,7 +113,7 @@ export class OpenstackSwiftProvider implements StorageProvider {
         expires: new Date(access.token.expires),
         userId: access.user.id,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Keystone authentication failed: ${error.message}`);
       throw new Error(`OpenStack authentication failed: ${error.message}`);
     }
@@ -182,7 +182,7 @@ export class OpenstackSwiftProvider implements StorageProvider {
       if (options?.acl) {
         await this.setContainerAcl(name, options.acl);
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 202) {
         // Container already exists
         this.logger.debug(`Container ${name} already exists`);
@@ -270,7 +270,7 @@ export class OpenstackSwiftProvider implements StorageProvider {
       });
 
       return true;
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 404) {
         return false;
       }
@@ -454,7 +454,7 @@ export class OpenstackSwiftProvider implements StorageProvider {
     try {
       await this.getMetadata(container, key);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 404) {
         return false;
       }

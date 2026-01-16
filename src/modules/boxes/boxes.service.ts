@@ -66,7 +66,7 @@ export class BoxesService {
         },
       });
       this.logger.log(`Created storage container: ${containerName}`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to create storage container: ${error.message}`);
       throw new BadRequestException('Failed to create storage container');
     }
@@ -391,7 +391,7 @@ export class BoxesService {
         await this.storageService.deleteContainer(box.storageContainerName);
         this.logger.log(`Deleted storage container: ${box.storageContainerName}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to delete storage container: ${error.message}`);
       // Continue with box deletion even if container deletion fails
     }
@@ -573,7 +573,7 @@ export class BoxesService {
       }
 
       // TODO: Implement ACL updates for AWS S3 and GCS if needed
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to update storage ACL: ${error.message}`);
       // Don't throw - ACL update is not critical for box operations
     }

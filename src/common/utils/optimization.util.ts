@@ -94,7 +94,7 @@ export async function retryWithBackoff<T>(
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await operation();
-    } catch (error) {
+    } catch (error: any) {
       lastError = error as Error;
 
       if (i < maxRetries - 1) {

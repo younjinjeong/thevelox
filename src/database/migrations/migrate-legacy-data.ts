@@ -89,14 +89,14 @@ class LegacyMigrationService {
 
           await user.save();
           migrated++;
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(`Failed to migrate user ${user._id}: ${error.message}`);
           skipped++;
         }
       }
 
       this.logger.log(`Users: ${migrated} migrated, ${skipped} skipped`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`User migration failed: ${error.message}`);
       throw error;
     }
@@ -152,14 +152,14 @@ class LegacyMigrationService {
 
           await box.save();
           migrated++;
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(`Failed to migrate box ${box._id}: ${error.message}`);
           skipped++;
         }
       }
 
       this.logger.log(`Boxes: ${migrated} migrated, ${skipped} skipped`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Box migration failed: ${error.message}`);
       throw error;
     }
@@ -214,14 +214,14 @@ class LegacyMigrationService {
 
           await file.save();
           migrated++;
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(`Failed to migrate file ${file._id}: ${error.message}`);
           skipped++;
         }
       }
 
       this.logger.log(`Files: ${migrated} migrated, ${skipped} skipped`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`File migration failed: ${error.message}`);
       throw error;
     }
@@ -269,7 +269,7 @@ class LegacyMigrationService {
         abortEarly: false,
       },
     }),
-    MongooseModule.forRoot(process.env.MONGODB_URI),
+    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost/velox'),
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Box.name, schema: BoxSchema },
@@ -325,7 +325,7 @@ async function bootstrap() {
     }
 
     logger.log('============================================');
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`Migration failed: ${error.message}`);
     logger.error(error.stack);
     process.exit(1);

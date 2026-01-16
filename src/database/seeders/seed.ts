@@ -58,7 +58,7 @@ async function bootstrap() {
     }
 
     logger.log('============================================');
-  } catch (error) {
+  } catch (error: any) {
     logger.error(`Seeder failed: ${error.message}`);
     logger.error(error.stack);
     process.exit(1);

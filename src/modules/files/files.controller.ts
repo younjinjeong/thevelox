@@ -91,7 +91,7 @@ export class FilesController {
         success: true,
         file: this.mapToResponseDto(uploadedFile),
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         message: error.message,

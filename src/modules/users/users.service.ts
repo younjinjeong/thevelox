@@ -309,13 +309,6 @@ export class UsersService {
   }
 
   /**
-   * Validate user password
-   */
-  async validatePassword(user: UserDocument, password: string): Promise<boolean> {
-    return bcrypt.compare(password, user.password);
-  }
-
-  /**
    * Update user's used storage size
    */
   async updateUsedSize(userId: string, sizeDelta: number): Promise<void> {

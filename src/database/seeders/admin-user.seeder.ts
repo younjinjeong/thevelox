@@ -59,7 +59,7 @@ export class AdminUserSeeder {
       this.logger.log('Email: admin@velox.com');
       this.logger.log('Password: admin123');
       this.logger.log('⚠️  Please change the default password after first login!');
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to seed admin user: ${error.message}`);
       throw error;
     }
@@ -69,7 +69,7 @@ export class AdminUserSeeder {
     try {
       await this.userModel.deleteOne({ email: 'admin@velox.com' });
       this.logger.log('Admin user removed');
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to remove admin user: ${error.message}`);
       throw error;
     }

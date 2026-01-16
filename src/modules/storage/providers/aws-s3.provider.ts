@@ -51,7 +51,7 @@ export class AwsS3Provider implements StorageProvider {
     try {
       await this.s3Client.send(new CreateBucketCommand({ Bucket: name }));
       this.logger.log(`Created S3 bucket: ${name}`);
-    } catch (error) {
+    } catch (error: any) {
       if (error.name !== 'BucketAlreadyOwnedByYou' && error.name !== 'BucketAlreadyExists') {
         throw error;
       }
@@ -179,7 +179,7 @@ export class AwsS3Provider implements StorageProvider {
     try {
       await this.getMetadata(container, key);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       if (error.name === 'NotFound' || error.name === 'NoSuchKey') {
         return false;
       }

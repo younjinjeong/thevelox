@@ -161,7 +161,7 @@ export class AuthService {
       }
 
       return this.generateTokens(user);
-    } catch (error) {
+    } catch (error: any) {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }

@@ -84,7 +84,7 @@ export class FilesService {
       });
 
       this.logger.log(`Uploaded file to storage: ${objectKey} (${fileSize} bytes)`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to upload file to storage: ${error.message}`);
       throw new BadRequestException('Failed to upload file to storage');
     }
@@ -172,7 +172,7 @@ export class FilesService {
       });
 
       this.logger.log(`Uploaded file version to storage: ${objectKey} (${fileSize} bytes)`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to upload file version to storage: ${error.message}`);
       throw new BadRequestException('Failed to upload file version to storage');
     }
@@ -231,7 +231,7 @@ export class FilesService {
       const stream = await this.storageService.download(file.container, objectKey);
       this.logger.log(`Downloaded file from storage: ${objectKey}`);
       return { stream, file };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to download file from storage: ${error.message}`);
       throw new BadRequestException('Failed to download file from storage');
     }
@@ -429,7 +429,7 @@ export class FilesService {
     try {
       await this.storageService.delete(file.container, fileId);
       this.logger.log(`Deleted file from storage: ${fileId}`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to delete file from storage: ${error.message}`);
     }
 
@@ -439,7 +439,7 @@ export class FilesService {
         const versionKey = `${fileId}_v${version._id}`;
         await this.storageService.delete(file.container, versionKey);
         this.logger.log(`Deleted version from storage: ${versionKey}`);
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(`Failed to delete version from storage: ${error.message}`);
       }
     }
@@ -526,7 +526,7 @@ export class FilesService {
       try {
         await this.delete(fileId, userId);
         count++;
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(`Failed to delete file ${fileId}: ${error.message}`);
       }
     }
@@ -545,7 +545,7 @@ export class FilesService {
       try {
         await this.restore(fileId, userId);
         count++;
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(`Failed to restore file ${fileId}: ${error.message}`);
       }
     }

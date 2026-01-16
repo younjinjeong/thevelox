@@ -92,7 +92,7 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         userId,
         timestamp: new Date().toISOString(),
       });
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Authentication failed for client ${client.id}: ${error.message}`);
       client.disconnect();
     }

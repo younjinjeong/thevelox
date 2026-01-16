@@ -41,16 +41,16 @@ import { ActivityModule } from './modules/activity/activity.module';
     }),
 
     // Rate limiting
-    ThrottlerModule.forRoot({
-      ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10),
+    ThrottlerModule.forRoot([{
+      ttl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10) * 1000, // Convert to milliseconds
       limit: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-    }),
+    }]),
 
     // Caching
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: () => ({
-        store: redisStore,
+        store: redisStore as any,
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
         password: process.env.REDIS_PASSWORD,

@@ -13,7 +13,11 @@
       "Bash(npm i:*)",
       "Bash(ls:*)",
       "Bash(chmod:*)",
-      "Bash(bash scripts/security-check.sh:*)"
+      "Bash(bash scripts/security-check.sh:*)",
+      "Bash(git push:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(grep:*)"
     ]
   }
 }

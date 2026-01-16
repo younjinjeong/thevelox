@@ -38,7 +38,7 @@ export class GoogleCloudStorageProvider implements StorageProvider {
     try {
       await this.storage.createBucket(name);
       this.logger.log(`Created GCS bucket: ${name}`);
-    } catch (error) {
+    } catch (error: any) {
       if (error.code !== 409) {
         // 409 = already exists
         throw error;

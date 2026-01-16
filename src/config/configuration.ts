@@ -2,7 +2,7 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('app', () => ({
   // Application
-  port: parseInt(process.env.PORT, 10) || 3000,
+  port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
 
   // Database
@@ -14,14 +14,14 @@ export default registerAs('app', () => ({
   // Redis
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
     password: process.env.REDIS_PASSWORD,
   },
 
   // Session & JWT
   session: {
     secret: process.env.SESSION_SECRET,
-    ttl: parseInt(process.env.SESSION_TTL, 10) || 86400,
+    ttl: parseInt(process.env.SESSION_TTL || '86400', 10),
   },
   jwt: {
     secret: process.env.JWT_SECRET,
@@ -67,7 +67,7 @@ export default registerAs('app', () => ({
   // Email (SMTP)
   email: {
     host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT, 10) || 587,
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_SECURE === 'true',
     auth: {
       user: process.env.SMTP_USER,
@@ -87,15 +87,15 @@ export default registerAs('app', () => ({
 
   // Security
   security: {
-    rateLimitTtl: parseInt(process.env.RATE_LIMIT_TTL, 10) || 60,
-    rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
+    rateLimitTtl: parseInt(process.env.RATE_LIMIT_TTL || '60', 10),
+    rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
     corsOrigin: process.env.CORS_ORIGIN || '*',
   },
 
   // Feature Flags
   features: {
     s3Storage: process.env.FEATURE_S3_STORAGE === 'true',
-    s3StoragePercentage: parseInt(process.env.FEATURE_S3_STORAGE_PERCENTAGE, 10) || 0,
+    s3StoragePercentage: parseInt(process.env.FEATURE_S3_STORAGE_PERCENTAGE || '0', 10),
     newUploadUi: process.env.FEATURE_NEW_UPLOAD_UI === 'true',
     realtimeCollaboration: process.env.FEATURE_REALTIME_COLLABORATION === 'true',
   },

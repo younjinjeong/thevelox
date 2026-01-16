@@ -34,7 +34,7 @@ export class DemoDataSeeder {
       this.logger.log(`Created ${demoBoxes.length} demo boxes`);
 
       this.logger.log('Demo data seeded successfully');
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to seed demo data: ${error.message}`);
       throw error;
     }
@@ -53,7 +53,7 @@ export class DemoDataSeeder {
       });
 
       this.logger.log('Demo data removed');
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to remove demo data: ${error.message}`);
       throw error;
     }

@@ -6,6 +6,7 @@ import { StorageObject, StorageObjectSchema } from './schemas/file.schema';
 import { StorageModule } from '../storage/storage.module';
 import { BoxesModule } from '../boxes/boxes.module';
 import { UsersModule } from '../users/users.module';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { UsersModule } from '../users/users.module';
     StorageModule,
     BoxesModule,
     UsersModule,
+    RealtimeModule,
   ],
   controllers: [FilesController],
   providers: [FilesService],

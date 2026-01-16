@@ -5,12 +5,14 @@ import { BoxesService } from './boxes.service';
 import { Box, BoxSchema } from './schemas/box.schema';
 import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Box.name, schema: BoxSchema }]),
     StorageModule,
     UsersModule,
+    RealtimeModule,
   ],
   controllers: [BoxesController],
   providers: [BoxesService],

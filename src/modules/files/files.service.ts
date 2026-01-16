@@ -17,6 +17,7 @@ import { UpdateFileDto, FileSearchDto, CopyFilesDto } from './dto/file.dto';
 import { StorageService } from '../storage/storage.service';
 import { BoxesService } from '../boxes/boxes.service';
 import { UsersService } from '../users/users.service';
+import { RealtimeService } from '../realtime/realtime.service';
 
 @Injectable()
 export class FilesService {
@@ -28,6 +29,7 @@ export class FilesService {
     private boxesService: BoxesService,
     private usersService: UsersService,
     private configService: ConfigService,
+    private realtimeService: RealtimeService,
   ) {}
 
   /**
@@ -120,6 +122,9 @@ export class FilesService {
     await this.usersService.updateUsedSize(userId, fileSize);
 
     this.logger.log(`File created: ${fileName} (${fileId}) in box ${boxId}`);
+
+    // Broadcast real-time event
+    this.realtimeService.broadcastFileUploaded(fileId.toString(), fileName, boxId, userId, user.name || user.email);
 
     return file;
   }

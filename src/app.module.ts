@@ -16,7 +16,7 @@ import { UsersModule } from './modules/users/users.module';
 import { BoxesModule } from './modules/boxes/boxes.module';
 import { FilesModule } from './modules/files/files.module';
 import { StorageModule } from './modules/storage/storage.module';
-// import { RealtimeModule } from './modules/realtime/realtime.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
 
 @Module({
   imports: [
@@ -66,7 +66,7 @@ import { StorageModule } from './modules/storage/storage.module';
     BoxesModule,
     FilesModule,
     StorageModule,
-    // RealtimeModule,
+    RealtimeModule,
   ],
   controllers: [],
   providers: [],

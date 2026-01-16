@@ -23,9 +23,15 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migration:create": "typeorm migration:create",
-    "migration:run": "typeorm migration:run",
-    "migration:revert": "typeorm migration:revert"
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeders/seed.ts seed",
+    "seed:drop": "ts-node -r tsconfig-paths/register src/database/seeders/seed.ts drop",
+    "seed:refresh": "ts-node -r tsconfig-paths/register src/database/seeders/seed.ts refresh",
+    "seed:admin": "ts-node -r tsconfig-paths/register src/database/seeders/seed.ts admin-only",
+    "migrate:legacy": "ts-node -r tsconfig-paths/register src/database/migrations/migrate-legacy-data.ts all",
+    "migrate:users": "ts-node -r tsconfig-paths/register src/database/migrations/migrate-legacy-data.ts users",
+    "migrate:boxes": "ts-node -r tsconfig-paths/register src/database/migrations/migrate-legacy-data.ts boxes",
+    "migrate:files": "ts-node -r tsconfig-paths/register src/database/migrations/migrate-legacy-data.ts files",
+    "migrate:validate": "ts-node -r tsconfig-paths/register src/database/migrations/migrate-legacy-data.ts validate"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

@@ -9,12 +9,12 @@ import * as redisStore from 'cache-manager-redis-store';
 import configuration from './config/configuration';
 import { configValidationSchema } from './config/validation';
 
-// Modules (to be created)
+// Modules
 // import { AuthModule } from './modules/auth/auth.module';
-// import { UsersModule } from './modules/users/users.module';
+import { UsersModule } from './modules/users/users.module';
 // import { BoxesModule } from './modules/boxes/boxes.module';
 // import { FilesModule } from './modules/files/files.module';
-// import { StorageModule } from './modules/storage/storage.module';
+import { StorageModule } from './modules/storage/storage.module';
 // import { RealtimeModule } from './modules/realtime/realtime.module';
 
 @Module({
@@ -58,12 +58,12 @@ import { configValidationSchema } from './config/validation';
     // Health checks
     TerminusModule,
 
-    // Feature modules (uncomment as you implement them)
+    // Feature modules
     // AuthModule,
-    // UsersModule,
+    UsersModule,
     // BoxesModule,
     // FilesModule,
-    // StorageModule,
+    StorageModule,
     // RealtimeModule,
   ],
   controllers: [],

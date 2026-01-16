@@ -1,0 +1,310 @@
+import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
+import { User, UserDocument } from './schemas/user.schema';
+import { CreateUserDto } from './dto/create-user.dto';
+import {
+  UpdateUserDto,
+  UpdateUserPreferencesDto,
+  UpdateUserNotificationsDto,
+} from './dto/update-user.dto';
+
+@Injectable()
+export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+  private readonly SALT_ROUNDS = 12;
+
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+  ) {}
+
+  /**
+   * Create a new user
+   */
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    // Check if user already exists
+    const existingUser = await this.userModel.findOne({
+      $or: [{ name: createUserDto.name }, { email: createUserDto.email }],
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this name or email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(createUserDto.password, this.SALT_ROUNDS);
+
+    // Generate user ID (would be from Keystone in original system)
+    const userId = this.generateUserId();
+
+    const user = new this.userModel({
+      _id: userId,
+      name: createUserDto.name,
+      username: createUserDto.username || createUserDto.name,
+      email: createUserDto.email,
+      password: hashedPassword,
+      locale: createUserDto.locale || 'en-US',
+      status: 1,
+      availableSize: 100 * 1024 * 1024 * 1024, // 100GB default
+      usedSize: 0,
+      createDate: new Date(),
+      notifications: {
+        received: true,
+        sent: true,
+        note: true,
+        nospace: true,
+        invited: true,
+        expired: true,
+      },
+      preference: {
+        theme: 'light',
+        viewtype: 'list',
+        conflict: 'ask',
+        layout: 'default',
+        dispname: 'username',
+        timezone: 'UTC',
+      },
+      roles: ['user'],
+    });
+
+    await user.save();
+    this.logger.log(`Created user: ${user.name} (${user._id})`);
+
+    return user;
+  }
+
+  /**
+   * Find all users
+   */
+  async findAll(page = 1, limit = 50): Promise<{ users: User[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      this.userModel
+        .find()
+        .select('-password')
+        .sort({ createDate: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.userModel.countDocuments(),
+    ]);
+
+    return { users, total };
+  }
+
+  /**
+   * Find user by ID
+   */
+  async findById(id: string): Promise<User> {
+    const user = await this.userModel.findById(id).select('-password').lean().exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return user;
+  }
+
+  /**
+   * Find user by username
+   */
+  async findByUsername(username: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ name: username }).exec();
+  }
+
+  /**
+   * Find user by email
+   */
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  /**
+   * Update user
+   */
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.userModel
+      .findByIdAndUpdate(id, updateUserDto, { new: true })
+      .select('-password')
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    this.logger.log(`Updated user: ${user.name} (${user._id})`);
+    return user;
+  }
+
+  /**
+   * Update user preferences
+   */
+  async updatePreferences(id: string, preferences: UpdateUserPreferencesDto): Promise<User> {
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        id,
+        { $set: { preference: preferences } },
+        { new: true },
+      )
+      .select('-password')
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    this.logger.log(`Updated preferences for user: ${user.name}`);
+    return user;
+  }
+
+  /**
+   * Update user notifications
+   */
+  async updateNotifications(id: string, notifications: UpdateUserNotificationsDto): Promise<User> {
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        id,
+        { $set: { notifications } },
+        { new: true },
+      )
+      .select('-password')
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    this.logger.log(`Updated notifications for user: ${user.name}`);
+    return user;
+  }
+
+  /**
+   * Change user password
+   */
+  async changePassword(id: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.userModel.findById(id).exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new ConflictException('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
+    user.password = hashedPassword;
+    await user.save();
+
+    this.logger.log(`Password changed for user: ${user.name}`);
+  }
+
+  /**
+   * Validate user password
+   */
+  async validatePassword(user: UserDocument, password: string): Promise<boolean> {
+    return bcrypt.compare(password, user.password);
+  }
+
+  /**
+   * Increment used space
+   */
+  async incrementUsedSpace(id: string, size: number): Promise<void> {
+    await this.userModel.findByIdAndUpdate(id, { $inc: { usedSize: size } }).exec();
+  }
+
+  /**
+   * Decrement used space
+   */
+  async decrementUsedSpace(id: string, size: number): Promise<void> {
+    const user = await this.userModel.findById(id).exec();
+    if (user) {
+      user.usedSize = Math.max(0, user.usedSize - size);
+      await user.save();
+    }
+  }
+
+  /**
+   * Check if user has enough space
+   */
+  async hasSpace(id: string, requiredSize: number): Promise<boolean> {
+    const user = await this.userModel.findById(id).select('usedSize availableSize').exec();
+    if (!user) return false;
+    return user.usedSize + requiredSize <= user.availableSize;
+  }
+
+  /**
+   * Get user storage stats
+   */
+  async getStorageStats(id: string): Promise<{
+    used: number;
+    available: number;
+    remaining: number;
+    usedPercentage: number;
+  }> {
+    const user = await this.userModel.findById(id).select('usedSize availableSize').exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    const remaining = Math.max(0, user.availableSize - user.usedSize);
+    const usedPercentage = user.availableSize > 0 ? (user.usedSize / user.availableSize) * 100 : 0;
+
+    return {
+      used: user.usedSize,
+      available: user.availableSize,
+      remaining,
+      usedPercentage,
+    };
+  }
+
+  /**
+   * Update last login info
+   */
+  async updateLastLogin(id: string, ip: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(id, {
+      lastLoginDate: new Date(),
+      lastLoginIp: ip,
+    }).exec();
+  }
+
+  /**
+   * Soft delete user (set status to inactive)
+   */
+  async softDelete(id: string): Promise<void> {
+    const user = await this.userModel.findByIdAndUpdate(id, { status: 2 }).exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    this.logger.log(`Soft deleted user: ${user.name} (${user._id})`);
+  }
+
+  /**
+   * Restore soft deleted user
+   */
+  async restore(id: string): Promise<void> {
+    const user = await this.userModel.findByIdAndUpdate(id, { status: 1 }).exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    this.logger.log(`Restored user: ${user.name} (${user._id})`);
+  }
+
+  /**
+   * Generate user ID (placeholder - would use Keystone ID in production)
+   */
+  private generateUserId(): string {
+    return `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  }
+}

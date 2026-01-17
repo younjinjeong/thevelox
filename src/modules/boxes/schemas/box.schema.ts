@@ -128,6 +128,9 @@ export class Box {
   @Prop()
   description?: string;
 
+  @Prop({ default: 'blue' })
+  color?: string; // UI color theme for the box
+
   @Prop({ type: [BoxTag], default: [] })
   tags: BoxTag[];
 
@@ -139,10 +142,10 @@ export class Box {
   fileLength: number; // Total number of files
 
   // Box type and status
-  @Prop({ type: Number, enum: Object.values(BoxType), default: BoxType.PRIVATE, index: true })
+  @Prop({ type: Number, enum: [0, 1, 2, 3, 4], default: BoxType.PRIVATE, index: true })
   type: BoxType;
 
-  @Prop({ type: Number, enum: Object.values(BoxStatus), default: BoxStatus.ACTIVE, index: true })
+  @Prop({ type: Number, enum: [1, 2], default: BoxStatus.ACTIVE, index: true })
   status: BoxStatus;
 
   // Link sharing configuration

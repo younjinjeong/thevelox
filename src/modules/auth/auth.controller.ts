@@ -8,8 +8,10 @@ import {
   Response,
   HttpCode,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -19,7 +21,37 @@ import { Public } from '../../common/decorators/public.decorator';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private checkGoogleOAuthEnabled(): void {
+    const clientId = this.configService.get<string>('app.google.clientId');
+    if (!clientId) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+          message:
+            'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.',
+          error: 'Service Unavailable',
+        },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+  }
+
+  @Public()
+  @Get('methods')
+  @ApiOperation({ summary: 'Get available authentication methods' })
+  @ApiResponse({ status: 200, description: 'Returns available auth methods' })
+  getAuthMethods() {
+    const googleClientId = this.configService.get<string>('app.google.clientId');
+    return {
+      local: true,
+      google: !!googleClientId,
+    };
+  }
 
   @Public()
   @Post('register')
@@ -71,7 +103,10 @@ export class AuthController {
   @UseGuards(GoogleOAuthGuard)
   @ApiOperation({ summary: 'Initiate Google OAuth login' })
   @ApiResponse({ status: 302, description: 'Redirect to Google OAuth' })
+  @ApiResponse({ status: 503, description: 'Google OAuth not configured' })
   async googleAuth(@Request() req) {
+    // Check if Google OAuth is configured before the guard runs
+    this.checkGoogleOAuthEnabled();
     // Initiates Google OAuth flow
     // This endpoint will redirect to Google
   }

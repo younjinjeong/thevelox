@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: velox-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://velox:dev-password@mongodb:27017/velox?authSource=velox
+      - MONGODB_NAME=velox
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=dev-redis-password
+      - SESSION_SECRET=dev-session-secret-for-local-development-only-32chars
+      - JWT_SECRET=dev-jwt-secret-for-local-development-only-32chars
+      - JWT_EXPIRATION=15m
+      - JWT_REFRESH_EXPIRATION=7d
+      - STORAGE_PROVIDER=s3
+      - AWS_ACCESS_KEY_ID=your-dev-access-key
+      - AWS_SECRET_ACCESS_KEY=your-dev-secret-key
+      - AWS_REGION=us-east-1
+      - AWS_S3_BUCKET=velox-dev-bucket
+      - CORS_ORIGIN=http://localhost:8080
+      - LOG_LEVEL=debug
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - velox-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend UI
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: velox-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - velox-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: velox-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=dev-root-password
+      - MONGO_INITDB_DATABASE=velox
+    volumes:
+      - mongodb-data:/data/db
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - velox-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: velox-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass dev-redis-password
+    volumes:
+      - redis-data:/data
+    networks:
+      - velox-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "dev-redis-password", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mongodb-data:
+  redis-data:
+
+networks:
+  velox-network:
+    driver: bridge

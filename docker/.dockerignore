@@ -1,0 +1,70 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist
+build
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+test-results
+playwright-report
+e2e/test-results
+
+# Documentation
+*.md
+!README.md
+docs
+
+# CI/CD
+.github
+
+# Claude Code
+.claude
+*.claude.md
+.claude_history
+claude_settings.json
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+tmp
+temp
+*.tmp
+
+# Legacy files
+package-legacy.json
+package-new.json
+
+# Kubernetes & deployment configs (already in repo)
+helm
+terraform
+k8s
+docker-compose*.yml

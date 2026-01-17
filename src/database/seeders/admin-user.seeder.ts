@@ -14,7 +14,7 @@ export class AdminUserSeeder {
   async seed() {
     try {
       // Check if admin user already exists
-      const existingAdmin = await this.userModel.findOne({ email: 'admin@velox.com' });
+      const existingAdmin = await this.userModel.findOne({ email: 'admin@velox.local' });
 
       if (existingAdmin) {
         this.logger.log('Admin user already exists, skipping...');
@@ -22,13 +22,13 @@ export class AdminUserSeeder {
       }
 
       // Create admin user
-      const hashedPassword = await bcrypt.hash('admin123', this.SALT_ROUNDS);
+      const hashedPassword = await bcrypt.hash('adminpass', this.SALT_ROUNDS);
 
       const adminUser = new this.userModel({
         _id: 'admin_user_001',
         name: 'Administrator',
         username: 'admin',
-        email: 'admin@velox.com',
+        email: 'admin@velox.local',
         password: hashedPassword,
         status: 1,
         roles: ['admin', 'user'],
@@ -56,8 +56,8 @@ export class AdminUserSeeder {
       await adminUser.save();
 
       this.logger.log('Admin user created successfully');
-      this.logger.log('Email: admin@velox.com');
-      this.logger.log('Password: admin123');
+      this.logger.log('Email: admin@velox.local');
+      this.logger.log('Password: adminpass');
       this.logger.log('⚠️  Please change the default password after first login!');
     } catch (error: any) {
       this.logger.error(`Failed to seed admin user: ${error.message}`);
@@ -67,7 +67,7 @@ export class AdminUserSeeder {
 
   async drop() {
     try {
-      await this.userModel.deleteOne({ email: 'admin@velox.com' });
+      await this.userModel.deleteOne({ email: 'admin@velox.local' });
       this.logger.log('Admin user removed');
     } catch (error: any) {
       this.logger.error(`Failed to remove admin user: ${error.message}`);

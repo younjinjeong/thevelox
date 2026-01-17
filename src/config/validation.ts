@@ -22,14 +22,14 @@ export const configValidationSchema = Joi.object({
   JWT_EXPIRATION: Joi.string().default('15m'),
   JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
 
-  // Google OAuth
-  GOOGLE_CLIENT_ID: Joi.string().required(),
-  GOOGLE_CLIENT_SECRET: Joi.string().required(),
-  GOOGLE_CALLBACK_URL: Joi.string().uri().optional(),
+  // Google OAuth (optional for development)
+  GOOGLE_CLIENT_ID: Joi.string().allow('').optional(),
+  GOOGLE_CLIENT_SECRET: Joi.string().allow('').optional(),
+  GOOGLE_CALLBACK_URL: Joi.string().uri().allow('').optional(),
 
   // Storage Provider
   STORAGE_PROVIDER: Joi.string()
-    .valid('openstack', 's3', 'gcs')
+    .valid('openstack', 's3', 'gcs', 'minio')
     .required(),
 
   // OpenStack (conditional validation)
@@ -82,6 +82,30 @@ export const configValidationSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
+
+  // MinIO (conditional validation)
+  MINIO_ENDPOINT: Joi.string().when('STORAGE_PROVIDER', {
+    is: 'minio',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MINIO_ACCESS_KEY: Joi.string().when('STORAGE_PROVIDER', {
+    is: 'minio',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MINIO_SECRET_KEY: Joi.string().when('STORAGE_PROVIDER', {
+    is: 'minio',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MINIO_BUCKET: Joi.string().when('STORAGE_PROVIDER', {
+    is: 'minio',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MINIO_USE_SSL: Joi.string().optional(),
+  MINIO_REGION: Joi.string().optional(),
 
   // Email
   SMTP_HOST: Joi.string().optional(),

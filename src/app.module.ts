@@ -19,6 +19,8 @@ import { StorageModule } from './modules/storage/storage.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ActivityModule } from './modules/activity/activity.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -71,6 +73,8 @@ import { ActivityModule } from './modules/activity/activity.module';
     RealtimeModule,
     NotificationsModule,
     ActivityModule,
+    SettingsModule,
+    AdminModule,
   ],
   controllers: [],
   providers: [],

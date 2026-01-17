@@ -323,4 +323,155 @@ export class UsersService {
 
     this.logger.log(`Updated used size for user ${userId}: ${sizeDelta > 0 ? '+' : ''}${sizeDelta} bytes`);
   }
+
+  // ==================== Admin Methods ====================
+
+  /**
+   * Find all users with admin filters (paginated, searchable)
+   */
+  async findAllAdmin(
+    page = 1,
+    limit = 20,
+    search?: string,
+    status?: number,
+  ): Promise<{ users: User[]; total: number; page: number; limit: number }> {
+    const query: any = {};
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { username: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (status !== undefined) {
+      query.status = status;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      this.userModel
+        .find(query)
+        .select('-password -twoFactorSecret')
+        .sort({ createDate: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.userModel.countDocuments(query),
+    ]);
+
+    return { users, total, page, limit };
+  }
+
+  /**
+   * Admin update user (bypasses normal restrictions)
+   */
+  async adminUpdate(id: string, dto: any): Promise<User> {
+    const user = await this.userModel
+      .findByIdAndUpdate(id, { $set: dto }, { new: true })
+      .select('-password')
+      .lean()
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    this.logger.log(`Admin updated user: ${user.name} (${user._id})`);
+    return user;
+  }
+
+  /**
+   * Admin reset password (no current password required)
+   */
+  async adminResetPassword(id: string, newPassword: string): Promise<void> {
+    const user = await this.userModel.findById(id).exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
+    user.password = hashedPassword;
+    await user.save();
+
+    this.logger.log(`Admin reset password for user: ${user.name} (${id})`);
+  }
+
+  /**
+   * Hard delete user (permanent)
+   */
+  async hardDelete(id: string): Promise<void> {
+    const user = await this.userModel.findByIdAndDelete(id).exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    this.logger.log(`Permanently deleted user: ${user.name} (${id})`);
+  }
+
+  /**
+   * Admin create user
+   */
+  async adminCreate(dto: {
+    email: string;
+    name: string;
+    username?: string;
+    password: string;
+    roles?: string[];
+    availableSize?: number;
+  }): Promise<User> {
+    // Check if user already exists
+    const existingUser = await this.userModel.findOne({
+      $or: [{ name: dto.name }, { email: dto.email }],
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this name or email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
+    const userId = this.generateUserId();
+
+    const user = new this.userModel({
+      _id: userId,
+      name: dto.name,
+      username: dto.username || dto.name,
+      email: dto.email,
+      password: hashedPassword,
+      locale: 'en-US',
+      status: 1,
+      availableSize: dto.availableSize || 100 * 1024 * 1024 * 1024, // 100GB
+      usedSize: 0,
+      createDate: new Date(),
+      notifications: {
+        received: true,
+        sent: true,
+        note: true,
+        nospace: true,
+        invited: true,
+        expired: true,
+      },
+      preference: {
+        theme: 'light',
+        viewtype: 'list',
+        conflict: 'ask',
+        layout: 'default',
+        dispname: 'username',
+        timezone: 'UTC',
+      },
+      roles: dto.roles || ['user'],
+    });
+
+    await user.save();
+    this.logger.log(`Admin created user: ${user.name} (${user._id})`);
+
+    const result = user.toObject();
+    delete result.password;
+    return result;
+  }
 }

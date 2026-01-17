@@ -5,6 +5,7 @@ import { StorageFactory } from './storage.factory';
 import { OpenstackSwiftProvider } from './providers/openstack-swift.provider';
 import { AwsS3Provider } from './providers/aws-s3.provider';
 import { GoogleCloudStorageProvider } from './providers/google-cloud-storage.provider';
+import { MinioProvider } from './providers/minio.provider';
 
 @Module({
   imports: [ConfigModule],
@@ -14,7 +15,8 @@ import { GoogleCloudStorageProvider } from './providers/google-cloud-storage.pro
     OpenstackSwiftProvider,
     AwsS3Provider,
     GoogleCloudStorageProvider,
+    MinioProvider,
   ],
-  exports: [StorageService],
+  exports: [StorageService, StorageFactory],
 })
 export class StorageModule {}

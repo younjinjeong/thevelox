@@ -76,6 +76,11 @@ export class CreateBoxDto {
   @MaxLength(500)
   description?: string;
 
+  @ApiPropertyOptional({ description: 'Box color theme', example: 'blue' })
+  @IsString()
+  @IsOptional()
+  color?: string;
+
   @ApiPropertyOptional({
     description: 'Box type: 0=Public R/W, 1=Public W, 2=Public R, 3=Share, 4=Private',
     enum: BoxType,

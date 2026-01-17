@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Provider } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -7,6 +7,19 @@ import { AuthService } from './auth.service';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+
+// Conditionally provide GoogleStrategy only if Google OAuth is configured
+const googleStrategyProvider: Provider = {
+  provide: GoogleStrategy,
+  useFactory: (configService: ConfigService, authService: AuthService) => {
+    const clientId = configService.get<string>('app.google.clientId');
+    if (clientId) {
+      return new GoogleStrategy(configService, authService);
+    }
+    return null;
+  },
+  inject: [ConfigService, AuthService],
+};
 
 @Module({
   imports: [
@@ -24,7 +37,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
+  providers: [AuthService, JwtStrategy, googleStrategyProvider],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

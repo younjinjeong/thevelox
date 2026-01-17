@@ -524,11 +524,22 @@ export class BoxesService {
 
   /**
    * Generate container name based on user and box type
+   * S3/MinIO bucket names must:
+   * - Be 3-63 characters
+   * - Consist only of lowercase letters, numbers, and hyphens
+   * - Start with a letter or number
    */
   private generateContainerName(username: string, boxId: string, type?: BoxType): string {
-    const sanitizedUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_');
+    // Sanitize username: lowercase, only alphanumeric and hyphens
+    const sanitizedUsername = username
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 20); // Limit username part
     const typeStr = type === BoxType.SHARE ? 'share' : 'box';
-    return `${sanitizedUsername}_${typeStr}_${boxId}`;
+    // Use hyphens instead of underscores for S3/MinIO compatibility
+    return `${sanitizedUsername}-${typeStr}-${boxId}`.toLowerCase();
   }
 
   /**

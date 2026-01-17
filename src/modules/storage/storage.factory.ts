@@ -4,6 +4,7 @@ import { StorageProvider } from './interfaces/storage-provider.interface';
 import { OpenstackSwiftProvider } from './providers/openstack-swift.provider';
 import { AwsS3Provider } from './providers/aws-s3.provider';
 import { GoogleCloudStorageProvider } from './providers/google-cloud-storage.provider';
+import { MinioProvider } from './providers/minio.provider';
 
 @Injectable()
 export class StorageFactory {
@@ -14,6 +15,7 @@ export class StorageFactory {
     private swiftProvider: OpenstackSwiftProvider,
     private s3Provider: AwsS3Provider,
     private gcsProvider: GoogleCloudStorageProvider,
+    private minioProvider: MinioProvider,
   ) {}
 
   getProvider(): StorageProvider {
@@ -27,8 +29,17 @@ export class StorageFactory {
         return this.s3Provider;
       case 'gcs':
         return this.gcsProvider;
+      case 'minio':
+        return this.minioProvider;
       default:
         throw new Error(`Unknown storage provider: ${provider}`);
     }
+  }
+
+  /**
+   * Get MinIO provider directly for testing connection
+   */
+  getMinioProvider(): MinioProvider {
+    return this.minioProvider;
   }
 }

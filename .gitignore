@@ -59,10 +59,10 @@ uploads/
 
 # Claude Code
 .claude/
+CLAUDE.md
 *.claude.md
 .claude_history
 claude_settings.json
-.claude/settings.local.json
 
 # Test results
 test-results/

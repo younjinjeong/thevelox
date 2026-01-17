@@ -38,7 +38,7 @@ export default registerAs('app', () => ({
 
   // Storage Configuration
   storage: {
-    provider: process.env.STORAGE_PROVIDER || 'openstack', // openstack | s3 | gcs
+    provider: process.env.STORAGE_PROVIDER || 'openstack', // openstack | s3 | gcs | minio
 
     // OpenStack Swift
     openstack: {
@@ -61,6 +61,16 @@ export default registerAs('app', () => ({
       projectId: process.env.GCP_PROJECT_ID,
       keyFilename: process.env.GCP_KEY_FILE,
       bucket: process.env.GCS_BUCKET,
+    },
+
+    // MinIO (S3-compatible)
+    minio: {
+      endpoint: process.env.MINIO_ENDPOINT || 'http://minio:9000',
+      accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
+      secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
+      bucket: process.env.MINIO_BUCKET || 'velox',
+      useSSL: process.env.MINIO_USE_SSL === 'true',
+      region: process.env.MINIO_REGION || 'us-east-1',
     },
   },
 

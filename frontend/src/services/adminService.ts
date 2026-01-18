@@ -24,7 +24,7 @@ export interface AdminUserListResponse {
 }
 
 export interface StorageSettings {
-  provider: 's3' | 'gcs' | 'minio';
+  provider: 's3' | 'gcs' | 'minio' | 'openstack';
   s3?: {
     accessKeyId: string;
     secretAccessKey: string;
@@ -43,6 +43,13 @@ export interface StorageSettings {
     bucket: string;
     useSSL: boolean;
     region?: string;
+  };
+  openstack?: {
+    authUrl: string;
+    tenantId: string;
+    username: string;
+    password: string;
+    container: string;
   };
 }
 

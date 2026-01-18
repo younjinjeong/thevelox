@@ -84,13 +84,43 @@ export class MinioSettingsDto {
   region?: string;
 }
 
+export class SwiftSettingsDto {
+  @ApiProperty({
+    description: 'OpenStack Keystone Auth URL',
+    example: 'http://keystone:5000/v2.0',
+  })
+  @IsString()
+  @MinLength(1)
+  authUrl: string;
+
+  @ApiProperty({ description: 'OpenStack Tenant ID' })
+  @IsString()
+  @MinLength(1)
+  tenantId: string;
+
+  @ApiProperty({ description: 'OpenStack Username' })
+  @IsString()
+  @MinLength(1)
+  username: string;
+
+  @ApiProperty({ description: 'OpenStack Password' })
+  @IsString()
+  @MinLength(1)
+  password: string;
+
+  @ApiProperty({ description: 'Swift Container Name' })
+  @IsString()
+  @MinLength(1)
+  container: string;
+}
+
 export class UpdateStorageSettingsDto {
   @ApiProperty({
-    enum: ['s3', 'gcs', 'minio'],
+    enum: ['s3', 'gcs', 'minio', 'openstack'],
     description: 'Storage provider type',
   })
-  @IsEnum(['s3', 'gcs', 'minio'])
-  provider: 's3' | 'gcs' | 'minio';
+  @IsEnum(['s3', 'gcs', 'minio', 'openstack'])
+  provider: 's3' | 'gcs' | 'minio' | 'openstack';
 
   @ApiPropertyOptional({ description: 'AWS S3 configuration' })
   @IsOptional()
@@ -109,6 +139,12 @@ export class UpdateStorageSettingsDto {
   @ValidateNested()
   @Type(() => MinioSettingsDto)
   minio?: MinioSettingsDto;
+
+  @ApiPropertyOptional({ description: 'OpenStack Swift configuration' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SwiftSettingsDto)
+  openstack?: SwiftSettingsDto;
 }
 
 export class TestStorageConnectionDto extends UpdateStorageSettingsDto {}
@@ -139,5 +175,14 @@ export class StorageSettingsResponseDto {
     secretKey: string; // Masked
     bucket: string;
     useSSL: boolean;
+  };
+
+  @ApiPropertyOptional({ description: 'OpenStack Swift settings (secrets masked)' })
+  openstack?: {
+    authUrl: string;
+    tenantId: string;
+    username: string;
+    password: string; // Masked
+    container?: string;
   };
 }

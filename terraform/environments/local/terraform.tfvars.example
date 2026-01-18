@@ -1,0 +1,13 @@
+# Example Terraform variables for local development
+# Copy this file to terraform.tfvars and update with your values
+
+namespace     = "velox-dev"
+release_name  = "velox"
+chart_path    = "../../../helm/velox"
+values_file   = "../../../helm/velox/values-dev.yaml"
+
+# AWS S3 Configuration (optional - only if using S3 storage)
+# aws_access_key_id     = "your-access-key-id"
+# aws_secret_access_key = "your-secret-access-key"
+# aws_region            = "us-east-1"
+# aws_s3_bucket         = "velox-dev-bucket"

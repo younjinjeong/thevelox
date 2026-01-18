@@ -323,6 +323,45 @@ export class EventsGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   // ============================================
+  // Note Events
+  // ============================================
+
+  /**
+   * Broadcast note created event to box members
+   */
+  broadcastNoteCreated(boxId: string, note: any) {
+    const roomName = this.getRoomName(boxId, 'box');
+    this.server.to(roomName).emit(EventType.NOTE_CREATED, note);
+    this.logger.log(`Note created event sent to room: ${roomName}`);
+  }
+
+  /**
+   * Broadcast note updated event to box members
+   */
+  broadcastNoteUpdated(boxId: string, note: any) {
+    const roomName = this.getRoomName(boxId, 'box');
+    this.server.to(roomName).emit(EventType.NOTE_UPDATED, note);
+    this.logger.log(`Note updated event sent to room: ${roomName}`);
+  }
+
+  /**
+   * Broadcast note deleted event to box members
+   */
+  broadcastNoteDeleted(boxId: string, noteId: string) {
+    const roomName = this.getRoomName(boxId, 'box');
+    this.server.to(roomName).emit(EventType.NOTE_DELETED, { noteId });
+    this.logger.log(`Note deleted event sent to room: ${roomName}`);
+  }
+
+  /**
+   * Broadcast note position changed event to box members
+   */
+  broadcastNotePositionChanged(boxId: string, data: { id: string; position: { top: number; left: number } }) {
+    const roomName = this.getRoomName(boxId, 'box');
+    this.server.to(roomName).emit(EventType.NOTE_POSITION_CHANGED, data);
+  }
+
+  // ============================================
   // System Events
   // ============================================
 

@@ -1,0 +1,38 @@
+apiVersion: v2
+name: velox
+description: Enterprise-grade private cloud storage solution for secure file sharing and collaboration
+type: application
+version: 2.0.0
+appVersion: "2.0.0"
+
+keywords:
+  - cloud-storage
+  - file-sharing
+  - collaboration
+  - nestjs
+  - mongodb
+  - redis
+
+home: https://github.com/yourusername/thevelox
+sources:
+  - https://github.com/yourusername/thevelox
+
+maintainers:
+  - name: Velox Team
+    email: team@thevelox.com
+
+# Dependencies - Bitnami charts for MongoDB and Redis
+dependencies:
+  - name: mongodb
+    version: 14.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: mongodb.enabled
+    tags:
+      - velox-database
+
+  - name: redis
+    version: 18.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+    tags:
+      - velox-cache

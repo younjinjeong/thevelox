@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { clsx } from 'clsx';
-import { MoreVertical, Star, Download, Trash2, Share2, Edit2, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { MoreVertical, Download, Trash2, Share2, Edit2, Copy, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { FileIcon } from './FileIcon';
 import { Dropdown, DropdownItem, DropdownDivider, Avatar } from '@/components/ui';
+import { ShareModal } from '@/components/share';
 import { useUIStore } from '@/stores/uiStore';
 import { fileService } from '@/services/fileService';
 import type { FileItem, SortField } from '@/types';
@@ -16,6 +18,7 @@ interface FileListProps {
 
 export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps) {
   const { selectedFiles, selectFile, sortField, sortOrder, setSortField, toggleSortOrder } = useUIStore();
+  const [shareFile, setShareFile] = useState<FileItem | null>(null);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -45,6 +48,9 @@ export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps
       case 'trash':
         await fileService.moveToTrash(boxId, file.id);
         onRefresh();
+        break;
+      case 'share':
+        setShareFile(file);
         break;
     }
   };
@@ -95,6 +101,8 @@ export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps
       <div className="divide-y divide-slate-100 dark:divide-slate-700">
         {files.map((file) => {
           const isSelected = selectedFiles.has(file.id);
+          // File is considered trashed if status === 2
+          const isTrashed = file.status === 2;
 
           return (
             <div
@@ -113,9 +121,24 @@ export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps
                 }
               }}
             >
-              {/* Name */}
+              {/* Checkbox + Name */}
               <div className="col-span-5 flex items-center gap-3 sm:col-span-6">
-                <FileIcon mimeType={file.mimeType} size="md" />
+                {/* Selection checkbox */}
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectFile(file.id, true);
+                  }}
+                  className={clsx(
+                    'flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border-2 cursor-pointer transition-colors',
+                    isSelected
+                      ? 'border-primary-500 bg-primary-500 text-white'
+                      : 'border-slate-300 hover:border-primary-400 dark:border-slate-600'
+                  )}
+                >
+                  {isSelected && <Check className="h-3 w-3" />}
+                </div>
+                <FileIcon mimeType={file.mime || 'application/octet-stream'} size="md" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span
@@ -124,11 +147,8 @@ export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps
                     >
                       {file.name}
                     </span>
-                    {file.isStarred && (
-                      <Star className="h-3.5 w-3.5 flex-shrink-0 fill-yellow-400 text-yellow-400" />
-                    )}
                   </div>
-                  {file.tags.length > 0 && (
+                  {file.tags && file.tags.length > 0 && (
                     <div className="mt-0.5 flex gap-1">
                       {file.tags.slice(0, 3).map((tag) => (
                         <span
@@ -145,23 +165,22 @@ export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps
 
               {/* Size */}
               <div className="col-span-2 hidden text-sm text-slate-500 dark:text-slate-400 sm:block">
-                {formatFileSize(file.size)}
+                {file.sizeFormatted || formatFileSize(file.size)}
               </div>
 
               {/* Modified */}
               <div className="col-span-3 hidden text-sm text-slate-500 dark:text-slate-400 md:block">
-                {format(new Date(file.updatedAt), 'MMM d, yyyy')}
+                {format(new Date(file.lastModifyDate || file.uploadDate), 'MMM d, yyyy')}
               </div>
 
               {/* Owner */}
               <div className="col-span-2 hidden items-center gap-2 lg:flex">
                 <Avatar
-                  src={file.uploadedBy.photo}
-                  name={file.uploadedBy.name}
+                  name={file.authorName || 'Unknown'}
                   size="sm"
                 />
                 <span className="truncate text-sm text-slate-600 dark:text-slate-300">
-                  {file.uploadedBy.name}
+                  {file.authorName || 'Unknown'}
                 </span>
               </div>
 
@@ -189,12 +208,6 @@ export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps
                   >
                     Share
                   </DropdownItem>
-                  <DropdownItem
-                    icon={<Star className="h-4 w-4" />}
-                    onClick={() => handleFileAction('star', file)}
-                  >
-                    {file.isStarred ? 'Remove star' : 'Add star'}
-                  </DropdownItem>
                   <DropdownDivider />
                   <DropdownItem
                     icon={<Edit2 className="h-4 w-4" />}
@@ -214,7 +227,7 @@ export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps
                     onClick={() => handleFileAction('trash', file)}
                     danger
                   >
-                    Move to trash
+                    {isTrashed ? 'Delete permanently' : 'Move to trash'}
                   </DropdownItem>
                 </Dropdown>
               </div>
@@ -222,6 +235,16 @@ export function FileList({ files, boxId, onFileClick, onRefresh }: FileListProps
           );
         })}
       </div>
+
+      {/* Share Modal */}
+      {shareFile && (
+        <ShareModal
+          fileId={shareFile.id}
+          fileName={shareFile.name}
+          isOpen={!!shareFile}
+          onClose={() => setShareFile(null)}
+        />
+      )}
     </div>
   );
 }

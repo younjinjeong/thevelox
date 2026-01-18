@@ -1,0 +1,221 @@
+# Default values for Velox Helm Chart
+# This is a YAML-formatted file.
+
+# Velox application configuration
+replicaCount: 1
+
+image:
+  repository: velox-backend
+  pullPolicy: IfNotPresent
+  tag: "2.0.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1001
+  runAsUser: 1001
+  runAsNonRoot: true
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  hosts:
+    - host: velox.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Velox application environment configuration
+config:
+  # Application settings
+  nodeEnv: production
+  port: 3000
+
+  # Session & JWT
+  sessionTtl: 86400
+  jwtExpiration: 15m
+  jwtRefreshExpiration: 7d
+
+  # Storage provider (openstack | s3 | gcs | azure)
+  storageProvider: s3
+
+  # Security settings
+  rateLimitTtl: 60
+  rateLimitMax: 100
+  corsOrigin: "*"
+
+  # Feature flags
+  features:
+    s3Storage: true
+    s3StoragePercentage: 100
+    newUploadUi: true
+    realtimeCollaboration: true
+
+  # Logging
+  logLevel: info
+
+# Secrets - OVERRIDE THESE IN PRODUCTION
+secrets:
+  # Session & JWT secrets (REQUIRED)
+  sessionSecret: "change-me-in-production-session-secret-min-32-chars"
+  jwtSecret: "change-me-in-production-jwt-secret-min-32-chars"
+
+  # MongoDB connection (if using external MongoDB)
+  # mongodbUri: "mongodb://username:password@mongodb-host:27017/velox?authSource=admin"
+  # mongodbName: "velox"
+
+  # Redis connection (if using external Redis)
+  # redisHost: "redis-host"
+  # redisPort: "6379"
+  # redisPassword: "redis-password"
+
+  # AWS S3 configuration
+  awsAccessKeyId: ""
+  awsSecretAccessKey: ""
+  awsRegion: "us-east-1"
+  awsS3Bucket: ""
+
+  # Google Cloud Storage configuration
+  gcpProjectId: ""
+  gcpKeyFile: ""
+  gcsBucket: ""
+
+  # Azure Blob Storage configuration
+  azureStorageAccount: ""
+  azureStorageAccessKey: ""
+  azureStorageContainer: ""
+
+  # Google OAuth
+  googleClientId: ""
+  googleClientSecret: ""
+  googleCallbackUrl: "http://velox.local/api/v1/auth/google/callback"
+
+  # Email (SMTP)
+  smtpHost: ""
+  smtpPort: "587"
+  smtpSecure: "false"
+  smtpUser: ""
+  smtpPassword: ""
+  emailFrom: "Velox <noreply@thevelox.com>"
+
+  # External services
+  bitlyUser: ""
+  bitlyApiKey: ""
+  googleAnalyticsCode: ""
+
+# Probes configuration
+livenessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: 3000
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 3
+  successThreshold: 1
+  failureThreshold: 3
+
+# Persistent storage for uploads
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  mountPath: /app/uploads
+
+# MongoDB subchart configuration
+mongodb:
+  enabled: true
+  auth:
+    enabled: true
+    rootPassword: "velox-root-password"
+    username: "velox"
+    password: "velox-password"
+    database: "velox"
+  persistence:
+    enabled: true
+    size: 8Gi
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Redis subchart configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "velox-redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 2Gi
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  replica:
+    replicaCount: 0

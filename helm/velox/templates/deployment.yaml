@@ -1,0 +1,253 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "velox.fullname" . }}
+  labels:
+    {{- include "velox.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "velox.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "velox.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "velox.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.config.port }}
+          protocol: TCP
+        env:
+        # Application settings
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: PORT
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: LOG_LEVEL
+
+        # Database settings
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: MONGODB_URI
+        - name: MONGODB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: MONGODB_NAME
+
+        # Redis settings
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: REDIS_PASSWORD
+
+        # Session & JWT
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: SESSION_SECRET
+        - name: SESSION_TTL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: SESSION_TTL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: JWT_SECRET
+        - name: JWT_EXPIRATION
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: JWT_EXPIRATION
+        - name: JWT_REFRESH_EXPIRATION
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: JWT_REFRESH_EXPIRATION
+
+        # Storage provider
+        - name: STORAGE_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: STORAGE_PROVIDER
+
+        # AWS S3
+        {{- if eq .Values.config.storageProvider "s3" }}
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: AWS_SECRET_ACCESS_KEY
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: AWS_REGION
+        - name: AWS_S3_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: AWS_S3_BUCKET
+        {{- end }}
+
+        # Google Cloud Storage
+        {{- if eq .Values.config.storageProvider "gcs" }}
+        - name: GCP_PROJECT_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: GCP_PROJECT_ID
+        - name: GCP_KEY_FILE
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: GCP_KEY_FILE
+        - name: GCS_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: GCS_BUCKET
+        {{- end }}
+
+        # Google OAuth
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: GOOGLE_CLIENT_ID
+              optional: true
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: GOOGLE_CLIENT_SECRET
+              optional: true
+        - name: GOOGLE_CALLBACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: GOOGLE_CALLBACK_URL
+              optional: true
+
+        # Security settings
+        - name: RATE_LIMIT_TTL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: RATE_LIMIT_TTL
+        - name: RATE_LIMIT_MAX
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: RATE_LIMIT_MAX
+        - name: CORS_ORIGIN
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: CORS_ORIGIN
+
+        # Feature flags
+        - name: FEATURE_S3_STORAGE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: FEATURE_S3_STORAGE
+        - name: FEATURE_S3_STORAGE_PERCENTAGE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: FEATURE_S3_STORAGE_PERCENTAGE
+        - name: FEATURE_NEW_UPLOAD_UI
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: FEATURE_NEW_UPLOAD_UI
+        - name: FEATURE_REALTIME_COLLABORATION
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "velox.fullname" . }}
+              key: FEATURE_REALTIME_COLLABORATION
+
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 12 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 12 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.persistence.enabled }}
+        volumeMounts:
+        - name: uploads
+          mountPath: {{ .Values.persistence.mountPath }}
+        {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: {{ include "velox.fullname" . }}-uploads
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

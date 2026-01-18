@@ -33,6 +33,17 @@ export class FilesService {
   ) {}
 
   /**
+   * Helper method to convert string ID to ObjectId
+   * Required for Mongoose queries to work correctly with MongoDB ObjectIds
+   */
+  private toObjectId(id: string): Types.ObjectId {
+    if (!id || !Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Invalid ID format');
+    }
+    return new Types.ObjectId(id);
+  }
+
+  /**
    * Upload a file to a box
    */
   async upload(
@@ -317,7 +328,7 @@ export class FilesService {
    * Find one file by ID with authorization check
    */
   async findOneByAuth(fileId: string, userId: string): Promise<FileDocument> {
-    const file = await this.fileModel.findById(fileId).exec();
+    const file = await this.fileModel.findById(this.toObjectId(fileId)).exec();
 
     if (!file) {
       throw new NotFoundException('File not found');
@@ -340,7 +351,7 @@ export class FilesService {
    * Find file by ID (no auth check - for internal use)
    */
   async findById(fileId: string): Promise<FileDocument> {
-    const file = await this.fileModel.findById(fileId).exec();
+    const file = await this.fileModel.findById(this.toObjectId(fileId)).exec();
 
     if (!file) {
       throw new NotFoundException('File not found');
@@ -552,5 +563,81 @@ export class FilesService {
 
     this.logger.log(`Bulk restored ${count} files by user ${userId}`);
     return count;
+  }
+
+  /**
+   * Toggle starred status for a file
+   */
+  async toggleStar(fileId: string, userId: string): Promise<FileDocument> {
+    const file = await this.findOneByAuth(fileId, userId);
+
+    file.starred = !file.starred;
+    file.lastModifyDate = new Date();
+    file.lastModifyUser = userId;
+
+    await file.save();
+
+    this.logger.log(`File ${file.starred ? 'starred' : 'unstarred'}: ${file.name} (${fileId})`);
+    return file;
+  }
+
+  /**
+   * Get starred files for a user
+   */
+  async findStarred(userId: string): Promise<FileDocument[]> {
+    // Get all boxes user has access to
+    const boxes = await this.boxesService.findByUser(userId);
+    const boxIds = boxes.map((box) => box._id.toString());
+
+    return this.fileModel
+      .find({
+        box: { $in: boxIds },
+        starred: true,
+        status: FileStatus.ACTIVE,
+      })
+      .sort({ lastModifyDate: -1 })
+      .exec();
+  }
+
+  /**
+   * Get recent files for a user
+   */
+  async findRecent(userId: string, limit = 20): Promise<FileDocument[]> {
+    // Get all boxes user has access to
+    const boxes = await this.boxesService.findByUser(userId);
+    const boxIds = boxes.map((box) => box._id.toString());
+
+    return this.fileModel
+      .find({
+        box: { $in: boxIds },
+        status: FileStatus.ACTIVE,
+      })
+      .sort({ lastModifyDate: -1 })
+      .limit(limit)
+      .exec();
+  }
+
+  /**
+   * Get download stream for public file access (no auth check)
+   */
+  async getDownloadStreamPublic(fileId: string): Promise<Readable> {
+    const file = await this.fileModel.findById(this.toObjectId(fileId)).exec();
+
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+
+    if (file.status !== FileStatus.ACTIVE) {
+      throw new NotFoundException('File not found');
+    }
+
+    try {
+      const stream = await this.storageService.download(file.container, fileId);
+      this.logger.log(`Downloaded file from storage (public): ${fileId}`);
+      return stream;
+    } catch (error: any) {
+      this.logger.error(`Failed to download file from storage: ${error.message}`);
+      throw new BadRequestException('Failed to download file from storage');
+    }
   }
 }

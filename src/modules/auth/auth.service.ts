@@ -22,6 +22,11 @@ export interface AuthResponse {
     name: string;
     email: string;
     username?: string;
+    role: 'user' | 'admin';
+    roles: string[];
+    locale: string;
+    storageQuota: number;
+    storageUsed: number;
   };
 }
 
@@ -136,10 +141,15 @@ export class AuthService {
       access_token: accessToken,
       refresh_token: refreshToken,
       user: {
-        id: user._id,
+        id: user._id.toString(),
         name: user.name,
         email: user.email,
         username: user.username,
+        role: user.roles?.includes('admin') ? 'admin' : 'user',
+        roles: user.roles || ['user'],
+        locale: user.locale || 'en-US',
+        storageQuota: user.availableSize || 0,
+        storageUsed: user.usedSize || 0,
       },
     };
   }

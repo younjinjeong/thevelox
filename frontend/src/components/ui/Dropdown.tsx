@@ -23,9 +23,21 @@ export function Dropdown({ trigger, children, align = 'right', className }: Drop
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
+
+  const handleMenuClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(false);
+  };
+
   return (
-    <div ref={dropdownRef} className={clsx('relative', className)}>
-      <div onClick={() => setIsOpen(!isOpen)}>{trigger}</div>
+    <div ref={dropdownRef} className={clsx('relative', className)} onClick={(e) => e.stopPropagation()}>
+      <div onClick={handleTriggerClick}>{trigger}</div>
 
       {isOpen && (
         <div
@@ -33,7 +45,7 @@ export function Dropdown({ trigger, children, align = 'right', className }: Drop
             'absolute z-50 mt-2 min-w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800 animate-fadeIn',
             align === 'right' ? 'right-0' : 'left-0'
           )}
-          onClick={() => setIsOpen(false)}
+          onClick={handleMenuClick}
         >
           {children}
         </div>
@@ -57,9 +69,17 @@ export function DropdownItem({
   danger = false,
   disabled = false,
 }: DropdownItemProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled && onClick) {
+      onClick();
+    }
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       className={clsx(
         'flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors',

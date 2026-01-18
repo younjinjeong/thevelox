@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { clsx } from 'clsx';
-import { MoreVertical, Star, Download, Trash2, Share2, Edit2, Copy } from 'lucide-react';
+import { MoreVertical, Download, Trash2, Share2, Edit2, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { FileIcon } from './FileIcon';
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui';
+import { ShareModal } from '@/components/share';
 import { useUIStore } from '@/stores/uiStore';
 import { fileService } from '@/services/fileService';
 import type { FileItem } from '@/types';
@@ -16,6 +18,7 @@ interface FileGridProps {
 
 export function FileGrid({ files, boxId, onFileClick, onRefresh }: FileGridProps) {
   const { selectedFiles, selectFile } = useUIStore();
+  const [shareFile, setShareFile] = useState<FileItem | null>(null);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -39,7 +42,7 @@ export function FileGrid({ files, boxId, onFileClick, onRefresh }: FileGridProps
         onRefresh();
         break;
       case 'share':
-        // TODO: Open share modal
+        setShareFile(file);
         break;
       case 'rename':
         // TODO: Open rename modal
@@ -54,7 +57,9 @@ export function FileGrid({ files, boxId, onFileClick, onRefresh }: FileGridProps
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       {files.map((file) => {
         const isSelected = selectedFiles.has(file.id);
-        const hasPreview = file.mimeType.startsWith('image/') && file.thumbnail;
+        const mimeType = file.mime || 'application/octet-stream';
+        const hasPreview = file.isImage && file.images?.thumbnail;
+        const isTrashed = file.status === 2;
 
         return (
           <div
@@ -84,13 +89,31 @@ export function FileGrid({ files, boxId, onFileClick, onRefresh }: FileGridProps
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <FileIcon mimeType={file.mimeType} size="xl" />
+                <FileIcon mimeType={mimeType} size="xl" />
               )}
 
-              {/* Star indicator */}
-              {file.isStarred && (
-                <Star className="absolute left-2 top-2 h-4 w-4 fill-yellow-400 text-yellow-400" />
-              )}
+              {/* Selection checkbox */}
+              <div
+                className={clsx(
+                  'absolute left-2 top-2 transition-opacity',
+                  isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                )}
+              >
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectFile(file.id, true);
+                  }}
+                  className={clsx(
+                    'flex h-6 w-6 items-center justify-center rounded-md border-2 cursor-pointer transition-colors',
+                    isSelected
+                      ? 'border-primary-500 bg-primary-500 text-white'
+                      : 'border-slate-300 bg-white/90 hover:border-primary-400 dark:border-slate-600 dark:bg-slate-800/90'
+                  )}
+                >
+                  {isSelected && <Check className="h-4 w-4" />}
+                </div>
+              </div>
 
               {/* Actions */}
               <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
@@ -116,12 +139,6 @@ export function FileGrid({ files, boxId, onFileClick, onRefresh }: FileGridProps
                   >
                     Share
                   </DropdownItem>
-                  <DropdownItem
-                    icon={<Star className="h-4 w-4" />}
-                    onClick={() => handleFileAction('star', file)}
-                  >
-                    {file.isStarred ? 'Remove star' : 'Add star'}
-                  </DropdownItem>
                   <DropdownDivider />
                   <DropdownItem
                     icon={<Edit2 className="h-4 w-4" />}
@@ -141,7 +158,7 @@ export function FileGrid({ files, boxId, onFileClick, onRefresh }: FileGridProps
                     onClick={() => handleFileAction('trash', file)}
                     danger
                   >
-                    Move to trash
+                    {isTrashed ? 'Delete permanently' : 'Move to trash'}
                   </DropdownItem>
                 </Dropdown>
               </div>
@@ -156,14 +173,24 @@ export function FileGrid({ files, boxId, onFileClick, onRefresh }: FileGridProps
                 {file.name}
               </h3>
               <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <span>{formatFileSize(file.size)}</span>
+                <span>{file.sizeFormatted || formatFileSize(file.size)}</span>
                 <span>•</span>
-                <span>{format(new Date(file.createdAt), 'MMM d')}</span>
+                <span>{format(new Date(file.uploadDate), 'MMM d')}</span>
               </div>
             </div>
           </div>
         );
       })}
+
+      {/* Share Modal */}
+      {shareFile && (
+        <ShareModal
+          fileId={shareFile.id}
+          fileName={shareFile.name}
+          isOpen={!!shareFile}
+          onClose={() => setShareFile(null)}
+        />
+      )}
     </div>
   );
 }

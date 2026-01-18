@@ -141,10 +141,10 @@ export class StorageObject {
   tagsSize: number; // Number of tags
 
   // File status and type
-  @Prop({ type: Number, enum: Object.values(FileStatus), default: FileStatus.ACTIVE, index: true })
+  @Prop({ type: Number, enum: [FileStatus.ACTIVE, FileStatus.DELETED], default: FileStatus.ACTIVE, index: true })
   status: FileStatus;
 
-  @Prop({ type: Number, enum: Object.values(FileType), default: FileType.MEMBER_INSERT })
+  @Prop({ type: Number, enum: [FileType.MEMBER_INSERT, FileType.PUBLIC_INSERT], default: FileType.MEMBER_INSERT })
   type: FileType;
 
   // Author and modification tracking
@@ -173,6 +173,9 @@ export class StorageObject {
 
   @Prop({ type: Boolean, default: false })
   isReceived: boolean; // File has been received
+
+  @Prop({ type: Boolean, default: false })
+  starred: boolean; // User has starred/favorited this file
 
   // Public sharing
   @Prop({ type: FilePublic })

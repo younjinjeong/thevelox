@@ -1,0 +1,13 @@
+apiVersion: v2
+name: velox-frontend
+description: Velox Frontend - Modern React UI for Velox Cloud Storage
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - velox
+  - frontend
+  - react
+  - cloud-storage
+maintainers:
+  - name: Velox Team

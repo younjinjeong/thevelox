@@ -8,7 +8,7 @@ import { boxService } from '@/services/boxService';
 interface CreateBoxModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: () => void | Promise<void>;
 }
 
 const boxColors = [
@@ -47,7 +47,7 @@ export function CreateBoxModal({ isOpen, onClose, onCreated }: CreateBoxModalPro
         color,
       });
       toast.success('Box created successfully');
-      onCreated();
+      await onCreated();
       handleClose();
     } catch (err: any) {
       const message = err.response?.data?.message || 'Failed to create box';

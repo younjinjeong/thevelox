@@ -21,6 +21,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ActivityModule } from './modules/activity/activity.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { TagsModule } from './modules/tags/tags.module';
+import { NotesModule } from './modules/notes/notes.module';
 
 @Module({
   imports: [
@@ -75,6 +77,8 @@ import { AdminModule } from './modules/admin/admin.module';
     ActivityModule,
     SettingsModule,
     AdminModule,
+    TagsModule,
+    NotesModule,
   ],
   controllers: [],
   providers: [],

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, FileIcon, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -14,17 +14,50 @@ interface FileUploadProps {
   onUploadComplete: () => void;
 }
 
+// Maximum file size: 500MB
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
+const MAX_FILE_SIZE_MB = 500;
+
+// Format file size for display
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
+// Extended upload state that includes the actual File object
+interface UploadState extends UploadProgress {
+  file: File;
+  sizeError?: boolean;
+}
+
 export function FileUpload({ boxId, isOpen, onClose, onUploadComplete }: FileUploadProps) {
-  const [uploads, setUploads] = useState<UploadProgress[]>([]);
+  const [uploads, setUploads] = useState<UploadState[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const uploadedCountRef = useRef(0);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newUploads: UploadProgress[] = acceptedFiles.map((file) => ({
-      fileId: Math.random().toString(36).substring(7),
-      fileName: file.name,
-      progress: 0,
-      status: 'pending',
-    }));
+    const newUploads: UploadState[] = acceptedFiles.map((file) => {
+      const sizeError = file.size > MAX_FILE_SIZE;
+      return {
+        fileId: Math.random().toString(36).substring(7),
+        fileName: file.name,
+        progress: 0,
+        status: sizeError ? 'error' : 'pending',
+        error: sizeError ? `File too large (${formatFileSize(file.size)}). Maximum size is ${MAX_FILE_SIZE_MB}MB` : undefined,
+        file,
+        sizeError,
+      };
+    });
+
+    // Show toast for oversized files
+    const oversizedCount = newUploads.filter(u => u.sizeError).length;
+    if (oversizedCount > 0) {
+      toast.error(`${oversizedCount} file(s) exceed the ${MAX_FILE_SIZE_MB}MB size limit`);
+    }
+
     setUploads((prev) => [...prev, ...newUploads]);
   }, []);
 
@@ -41,31 +74,19 @@ export function FileUpload({ boxId, isOpen, onClose, onUploadComplete }: FileUpl
     if (uploads.length === 0) return;
 
     setIsUploading(true);
-    const pendingUploads = uploads.filter((u) => u.status === 'pending');
+    uploadedCountRef.current = 0;
+    // Only upload files that are pending and don't have size errors
+    const pendingUploads = uploads.filter((u) => u.status === 'pending' && !u.sizeError);
+    let completedCount = 0;
+    let failedCount = 0;
 
     for (const upload of pendingUploads) {
       try {
-        // Find the actual file from dropzone
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        const files = fileInput?.files;
-        const file = files ? Array.from(files).find((f) => f.name === upload.fileName) : null;
-
-        if (!file) {
-          setUploads((prev) =>
-            prev.map((u) =>
-              u.fileId === upload.fileId
-                ? { ...u, status: 'error', error: 'File not found' }
-                : u
-            )
-          );
-          continue;
-        }
-
         setUploads((prev) =>
           prev.map((u) => (u.fileId === upload.fileId ? { ...u, status: 'uploading' } : u))
         );
 
-        await fileService.uploadFile(boxId, file, (progress) => {
+        await fileService.uploadFile(boxId, upload.file, (progress) => {
           setUploads((prev) =>
             prev.map((u) => (u.fileId === upload.fileId ? { ...u, progress } : u))
           );
@@ -76,6 +97,7 @@ export function FileUpload({ boxId, isOpen, onClose, onUploadComplete }: FileUpl
             u.fileId === upload.fileId ? { ...u, status: 'completed', progress: 100 } : u
           )
         );
+        completedCount++;
       } catch (error: any) {
         setUploads((prev) =>
           prev.map((u) =>
@@ -84,20 +106,18 @@ export function FileUpload({ boxId, isOpen, onClose, onUploadComplete }: FileUpl
               : u
           )
         );
+        failedCount++;
       }
     }
 
     setIsUploading(false);
 
-    const completed = uploads.filter((u) => u.status === 'completed').length;
-    const failed = uploads.filter((u) => u.status === 'error').length;
-
-    if (completed > 0) {
-      toast.success(`${completed} file(s) uploaded successfully`);
+    if (completedCount > 0) {
+      toast.success(`${completedCount} file(s) uploaded successfully`);
       onUploadComplete();
     }
-    if (failed > 0) {
-      toast.error(`${failed} file(s) failed to upload`);
+    if (failedCount > 0) {
+      toast.error(`${failedCount} file(s) failed to upload`);
     }
   };
 
@@ -136,7 +156,7 @@ export function FileUpload({ boxId, isOpen, onClose, onUploadComplete }: FileUpl
             </>
           )}
         </p>
-        <p className="mt-1 text-xs text-slate-400">Maximum file size: 100 MB</p>
+        <p className="mt-1 text-xs text-slate-400">Maximum file size: {MAX_FILE_SIZE_MB} MB</p>
       </div>
 
       {/* Upload list */}
@@ -194,10 +214,10 @@ export function FileUpload({ boxId, isOpen, onClose, onUploadComplete }: FileUpl
         </Button>
         <Button
           onClick={startUpload}
-          disabled={uploads.length === 0 || isUploading}
+          disabled={uploads.filter((u) => u.status === 'pending' && !u.sizeError).length === 0 || isUploading}
           isLoading={isUploading}
         >
-          Upload {uploads.filter((u) => u.status === 'pending').length} file(s)
+          Upload {uploads.filter((u) => u.status === 'pending' && !u.sizeError).length} file(s)
         </Button>
       </ModalFooter>
     </Modal>

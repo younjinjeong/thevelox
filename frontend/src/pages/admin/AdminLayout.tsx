@@ -6,6 +6,7 @@ const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/storage', icon: Database, label: 'Storage' },
   { to: '/admin/users', icon: Users, label: 'Users' },
+  { to: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function AdminLayout() {

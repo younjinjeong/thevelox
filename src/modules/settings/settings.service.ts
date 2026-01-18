@@ -97,6 +97,8 @@ export class SettingsService {
           return await this.testS3Connection(dto.s3);
         case 'gcs':
           return await this.testGcsConnection(dto.gcs);
+        case 'openstack':
+          return await this.testOpenstackConnection(dto.openstack);
         default:
           return { success: false, message: 'Unknown provider' };
       }
@@ -210,6 +212,38 @@ export class SettingsService {
     return { success: true, message: 'Connection successful' };
   }
 
+  private async testOpenstackConnection(
+    config: UpdateStorageSettingsDto['openstack'],
+  ): Promise<{ success: boolean; message: string }> {
+    if (!config) {
+      return { success: false, message: 'OpenStack configuration is missing' };
+    }
+
+    // Test OpenStack Swift connection by authenticating with Keystone
+    const authPayload = {
+      auth: {
+        tenantId: config.tenantId,
+        passwordCredentials: {
+          username: config.username,
+          password: config.password,
+        },
+      },
+    };
+
+    const response = await fetch(`${config.authUrl}/tokens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(authPayload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Authentication failed: ${errorText}`);
+    }
+
+    return { success: true, message: 'Connection successful' };
+  }
+
   private encryptSensitiveFields(dto: UpdateStorageSettingsDto): any {
     const result: any = { provider: dto.provider };
 
@@ -231,6 +265,13 @@ export class SettingsService {
       result.minio = {
         ...dto.minio,
         secretKey: this.encrypt(dto.minio.secretKey),
+      };
+    }
+
+    if (dto.openstack) {
+      result.openstack = {
+        ...dto.openstack,
+        password: this.encrypt(dto.openstack.password),
       };
     }
 
@@ -261,6 +302,13 @@ export class SettingsService {
       };
     }
 
+    if (storage.openstack) {
+      result.openstack = {
+        ...storage.openstack,
+        password: this.decrypt(storage.openstack.password),
+      };
+    }
+
     return result;
   }
 
@@ -285,6 +333,13 @@ export class SettingsService {
       result.minio = {
         ...storage.minio,
         secretKey: '********',
+      };
+    }
+
+    if (storage?.openstack) {
+      result.openstack = {
+        ...storage.openstack,
+        password: '********',
       };
     }
 

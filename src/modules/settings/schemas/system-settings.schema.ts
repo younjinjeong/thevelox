@@ -53,6 +53,24 @@ export class MinioSettings {
 }
 
 @Schema({ _id: false })
+export class OpenstackSettings {
+  @Prop()
+  authUrl: string;
+
+  @Prop()
+  tenantId: string;
+
+  @Prop()
+  username: string;
+
+  @Prop()
+  password: string;
+
+  @Prop()
+  container: string;
+}
+
+@Schema({ _id: false })
 export class StorageConfig {
   @Prop({
     type: String,
@@ -69,6 +87,9 @@ export class StorageConfig {
 
   @Prop({ type: MinioSettings })
   minio?: MinioSettings;
+
+  @Prop({ type: OpenstackSettings })
+  openstack?: OpenstackSettings;
 }
 
 /**

@@ -286,6 +286,9 @@ export class FileResponseDto {
 
   @ApiProperty({ description: 'Download link' })
   link?: string;
+
+  @ApiProperty({ description: 'User has starred this file' })
+  starred?: boolean;
 }
 
 export class FileListResponseDto {

@@ -1,0 +1,42 @@
+# Development environment overrides for local Docker Desktop Kubernetes
+# Usage: helm install velox-frontend ./helm/velox-frontend -f ./helm/velox-frontend/values-dev.yaml
+
+replicaCount: 1
+
+image:
+  pullPolicy: Never  # Use locally built images
+  tag: "latest"
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# Backend service for API proxying
+backendService:
+  name: velox
+  port: 3000
+
+# Disable read-only filesystem for development
+securityContext:
+  runAsNonRoot: false
+  runAsUser: 0
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 80
+  initialDelaySeconds: 3
+  periodSeconds: 3

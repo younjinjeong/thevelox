@@ -15,12 +15,11 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { HomePage } from '@/pages/HomePage';
 import { BoxesPage } from '@/pages/BoxesPage';
 import { BoxDetailPage } from '@/pages/BoxDetailPage';
-import {
-  AdminLayout,
-  AdminDashboardPage,
-  AdminStoragePage,
-  AdminUsersPage,
-} from '@/pages/admin';
+import { SettingsPage } from '@/pages/SettingsPage';
+import { StarredPage } from '@/pages/StarredPage';
+import { RecentPage } from '@/pages/RecentPage';
+import { TrashPage } from '@/pages/TrashPage';
+import { AdminSettingsPage } from '@/pages/admin';
 
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -42,29 +41,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Admin route wrapper
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user } = useAuthStore();
-  const location = useLocation();
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
-
-  if (user?.role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-}
 
 // Public route wrapper (redirects to home if already logged in)
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -85,25 +61,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Placeholder pages
-function StarredPage() {
-  return (
-    <div className="text-center py-12">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Starred Files</h1>
-      <p className="mt-2 text-slate-500">Coming soon</p>
-    </div>
-  );
-}
-
-function RecentPage() {
-  return (
-    <div className="text-center py-12">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Recent Files</h1>
-      <p className="mt-2 text-slate-500">Coming soon</p>
-    </div>
-  );
-}
-
+// Placeholder pages (remaining ones)
 function SharedPage() {
   return (
     <div className="text-center py-12">
@@ -117,24 +75,6 @@ function TagsPage() {
   return (
     <div className="text-center py-12">
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Tags</h1>
-      <p className="mt-2 text-slate-500">Coming soon</p>
-    </div>
-  );
-}
-
-function TrashPage() {
-  return (
-    <div className="text-center py-12">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Trash</h1>
-      <p className="mt-2 text-slate-500">Coming soon</p>
-    </div>
-  );
-}
-
-function SettingsPage() {
-  return (
-    <div className="text-center py-12">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Settings</h1>
       <p className="mt-2 text-slate-500">Coming soon</p>
     </div>
   );
@@ -165,6 +105,14 @@ function NotFoundPage() {
       <p className="mt-2 text-slate-500">Page not found</p>
     </div>
   );
+}
+
+// Smart settings route - shows admin settings for admins, user settings for normal users
+function SmartSettingsPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin' || (user as any)?.roles?.includes('admin');
+
+  return isAdmin ? <AdminSettingsPage /> : <SettingsPage />;
 }
 
 export default function App() {
@@ -240,23 +188,14 @@ export default function App() {
           <Route path="/recent" element={<RecentPage />} />
           <Route path="/tags" element={<TagsPage />} />
           <Route path="/trash" element={<TrashPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<SmartSettingsPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
-        {/* Admin routes */}
-        <Route
-          element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }
-        >
-          <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/admin/storage" element={<AdminStoragePage />} />
-          <Route path="/admin/users" element={<AdminUsersPage />} />
-        </Route>
+        {/* Admin routes - redirect to /settings */}
+        <Route path="/admin" element={<Navigate to="/settings" replace />} />
+        <Route path="/admin/*" element={<Navigate to="/settings" replace />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

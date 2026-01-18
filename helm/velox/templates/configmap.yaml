@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "velox.fullname" . }}
+  labels:
+    {{- include "velox.labels" . | nindent 4 }}
+data:
+  # Application settings
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+
+  # Session & JWT (non-secret parts)
+  SESSION_TTL: {{ .Values.config.sessionTtl | quote }}
+  JWT_EXPIRATION: {{ .Values.config.jwtExpiration | quote }}
+  JWT_REFRESH_EXPIRATION: {{ .Values.config.jwtRefreshExpiration | quote }}
+
+  # Storage provider
+  STORAGE_PROVIDER: {{ .Values.config.storageProvider | quote }}
+
+  # Security settings
+  RATE_LIMIT_TTL: {{ .Values.config.rateLimitTtl | quote }}
+  RATE_LIMIT_MAX: {{ .Values.config.rateLimitMax | quote }}
+  CORS_ORIGIN: {{ .Values.config.corsOrigin | quote }}
+
+  # Feature flags
+  FEATURE_S3_STORAGE: {{ .Values.config.features.s3Storage | quote }}
+  FEATURE_S3_STORAGE_PERCENTAGE: {{ .Values.config.features.s3StoragePercentage | quote }}
+  FEATURE_NEW_UPLOAD_UI: {{ .Values.config.features.newUploadUi | quote }}
+  FEATURE_REALTIME_COLLABORATION: {{ .Values.config.features.realtimeCollaboration | quote }}

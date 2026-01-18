@@ -10,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Box, BoxDocument, BoxStatus, BoxType } from './schemas/box.schema';
+import { StorageObject, FileDocument } from '../files/schemas/file.schema';
 import { CreateBoxDto, UpdateBoxDto, AddMembersDto, ShareBoxDto } from './dto/box.dto';
 import { StorageService } from '../storage/storage.service';
 import { UsersService } from '../users/users.service';
@@ -21,11 +22,31 @@ export class BoxesService {
 
   constructor(
     @InjectModel(Box.name) private boxModel: Model<BoxDocument>,
+    @InjectModel(StorageObject.name) private storageObjectModel: Model<FileDocument>,
     private storageService: StorageService,
     private usersService: UsersService,
     private configService: ConfigService,
   ) {
     this.defaultStorageProvider = this.configService.get<string>('storage.provider', 'swift');
+  }
+
+  /**
+   * Helper method to convert string ID to ObjectId
+   * Required for Mongoose queries to work correctly with MongoDB ObjectIds
+   */
+  private toObjectId(id: string): Types.ObjectId {
+    if (!id || !Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Invalid ID format');
+    }
+    return new Types.ObjectId(id);
+  }
+
+  /**
+   * Helper method to find a box by ID with ObjectId conversion
+   */
+  private async findBoxById(boxId: string): Promise<BoxDocument | null> {
+    const objectId = this.toObjectId(boxId);
+    return this.boxModel.findById(objectId).exec();
   }
 
   /**
@@ -145,14 +166,18 @@ export class BoxesService {
    * Find one box by ID with authorization check
    */
   async findOneByAuth(boxId: string, userId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
     }
 
-    // Check if user has access (owner or member)
-    if (box.owner !== userId && !box.members.includes(userId)) {
+    // Check if user has access (owner or member) - convert to strings for comparison
+    const ownerId = box.owner.toString();
+    const memberIds = box.members.map(m => m.toString());
+    const requestUserId = userId.toString();
+
+    if (ownerId !== requestUserId && !memberIds.includes(requestUserId)) {
       throw new ForbiddenException('You do not have access to this box');
     }
 
@@ -163,7 +188,7 @@ export class BoxesService {
    * Find one box by ID (no auth check - for internal use)
    */
   async findById(boxId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -205,7 +230,7 @@ export class BoxesService {
    * Update a box
    */
   async update(boxId: string, updateBoxDto: UpdateBoxDto, userId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -238,7 +263,7 @@ export class BoxesService {
    * Add members to a box
    */
   async addMembers(boxId: string, addMembersDto: AddMembersDto, userId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -294,7 +319,7 @@ export class BoxesService {
    * Remove a member from a box
    */
   async removeMember(boxId: string, memberId: string, userId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -322,7 +347,7 @@ export class BoxesService {
    * Archive (soft delete) a box
    */
   async archive(boxId: string, userId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -348,7 +373,7 @@ export class BoxesService {
    * Restore an archived box
    */
   async restore(boxId: string, userId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -368,22 +393,42 @@ export class BoxesService {
   }
 
   /**
-   * Permanently delete a box and its storage container
+   * Permanently delete a box, all its files, and its storage container
    */
   async delete(boxId: string, userId: string): Promise<void> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
     }
 
     // Only owner can delete
-    if (box.owner !== userId) {
+    const ownerId = box.owner.toString();
+    const requestUserId = userId.toString();
+    if (ownerId !== requestUserId) {
       throw new ForbiddenException('Only the owner can delete this box');
     }
 
-    // TODO: Delete all files in the box first (implement when Files module is ready)
-    // This would involve deleting all StorageObject records and their actual files
+    // Get all files in the box
+    const files = await this.storageObjectModel.find({ box: boxId }).exec();
+    this.logger.log(`Found ${files.length} files to delete in box: ${box.name} (${boxId})`);
+
+    // Delete each file from storage
+    for (const file of files) {
+      try {
+        if (file.container && file.name) {
+          await this.storageService.delete(file.container, file.name);
+          this.logger.debug(`Deleted file from storage: ${file.name}`);
+        }
+      } catch (error: any) {
+        this.logger.error(`Failed to delete file ${file.name} from storage: ${error.message}`);
+        // Continue with other files
+      }
+    }
+
+    // Delete all file records from MongoDB
+    const deleteResult = await this.storageObjectModel.deleteMany({ box: boxId }).exec();
+    this.logger.log(`Deleted ${deleteResult.deletedCount} file records from MongoDB`);
 
     // Delete storage container
     try {
@@ -396,8 +441,9 @@ export class BoxesService {
       // Continue with box deletion even if container deletion fails
     }
 
-    // Delete box
-    await this.boxModel.deleteOne({ _id: boxId }).exec();
+    // Delete box record
+    const boxObjectId = this.toObjectId(boxId);
+    await this.boxModel.deleteOne({ _id: boxObjectId }).exec();
     this.logger.log(`Box permanently deleted: ${box.name} (${box._id})`);
   }
 
@@ -443,7 +489,7 @@ export class BoxesService {
    * Update box size and file count
    */
   async updateStats(boxId: string, sizeDelta: number, fileDelta: number): Promise<void> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -460,7 +506,7 @@ export class BoxesService {
    * Share box with users (update ACL and send notifications)
    */
   async shareBox(boxId: string, shareDto: ShareBoxDto, userId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');
@@ -496,7 +542,7 @@ export class BoxesService {
    * Close/disable sharing for a box
    */
   async closeSharing(boxId: string, userId: string): Promise<BoxDocument> {
-    const box = await this.boxModel.findById(boxId).exec();
+    const box = await this.findBoxById(boxId);
 
     if (!box) {
       throw new NotFoundException('Box not found');

@@ -35,11 +35,19 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     // Return user object that will be attached to request.user
+    // Include both roles array (backend) and role string (frontend compatibility)
     return {
-      userId: user._id,
+      id: user._id.toString(),
+      userId: user._id.toString(),
       email: user.email,
       name: user.name,
+      username: user.username,
       roles: user.roles,
+      role: user.roles?.includes('admin') ? 'admin' : 'user',
+      locale: user.locale,
+      storageQuota: user.availableSize,
+      storageUsed: user.usedSize,
+      status: user.status,
     };
   }
 }

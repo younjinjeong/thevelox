@@ -18,6 +18,6 @@ import { RealtimeService } from './realtime.service';
     }),
   ],
   providers: [EventsGateway, RealtimeService],
-  exports: [RealtimeService],
+  exports: [RealtimeService, EventsGateway],
 })
 export class RealtimeModule {}

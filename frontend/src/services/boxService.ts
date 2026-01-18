@@ -1,27 +1,54 @@
 import api from './api';
 import type { Box, CreateBoxData, PaginatedResponse, BoxMember } from '@/types';
 
+// Map backend BoxResponseDto to frontend Box type
+function mapBoxResponse(box: any): Box {
+  return {
+    id: box.id,
+    name: box.name,
+    description: box.description,
+    owner: box.owner,
+    members: box.members || [],
+    color: box.color,
+    icon: box.icon,
+    isPublic: box.isPublic || false,
+    fileCount: box.fileLength || 0,
+    totalSize: box.size || 0,
+    createdAt: box.createDate,
+    updatedAt: box.lastModifyDate,
+  };
+}
+
 export const boxService = {
-  async getBoxes(page = 1, limit = 20): Promise<PaginatedResponse<Box>> {
-    const response = await api.get<PaginatedResponse<Box>>('/boxes', {
-      params: { page, limit },
+  async getBoxes(_page = 1, _limit = 20): Promise<PaginatedResponse<Box>> {
+    // Backend returns array directly, not paginated response
+    const response = await api.get<any[]>('/boxes', {
+      params: { includeArchived: false },
     });
-    return response.data;
+    const boxes = (response.data || []).map(mapBoxResponse);
+    return {
+      data: boxes,
+      total: boxes.length,
+      page: 1,
+      limit: boxes.length,
+      totalPages: 1,
+    };
   },
 
   async getBox(id: string): Promise<Box> {
-    const response = await api.get<Box>(`/boxes/${id}`);
-    return response.data;
+    const response = await api.get<any>(`/boxes/${id}`);
+    return mapBoxResponse(response.data);
   },
 
   async createBox(data: CreateBoxData): Promise<Box> {
-    const response = await api.post<Box>('/boxes', data);
-    return response.data;
+    const response = await api.post<any>('/boxes', data);
+    return mapBoxResponse(response.data);
   },
 
   async updateBox(id: string, data: Partial<CreateBoxData>): Promise<Box> {
-    const response = await api.patch<Box>(`/boxes/${id}`, data);
-    return response.data;
+    // Backend uses PUT, not PATCH
+    const response = await api.put<any>(`/boxes/${id}`, data);
+    return mapBoxResponse(response.data);
   },
 
   async deleteBox(id: string): Promise<void> {

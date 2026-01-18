@@ -12,10 +12,8 @@ import {
   ChevronLeft,
   Share2,
   Tag,
-  Shield,
-  Users,
-  Database,
 } from 'lucide-react';
+// Note: Shield, Users, Database icons removed - ADMIN section moved to Settings
 import { useUIStore } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui';
@@ -175,35 +173,6 @@ export function Sidebar() {
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               {user ? `${formatBytes(user.storageUsed)} of ${formatBytes(user.storageQuota)}` : '0 B'}
             </p>
-          </div>
-        )}
-
-        {/* Admin section */}
-        {user?.role === 'admin' && (
-          <div className="border-t border-slate-200 p-3 dark:border-slate-700">
-            {!sidebarCollapsed && (
-              <p className="mb-2 px-3 text-xs font-semibold uppercase text-slate-400">
-                Admin
-              </p>
-            )}
-            <NavItem
-              to="/admin"
-              icon={<Shield className="h-5 w-5" />}
-              label="Dashboard"
-              collapsed={sidebarCollapsed}
-            />
-            <NavItem
-              to="/admin/storage"
-              icon={<Database className="h-5 w-5" />}
-              label="Storage"
-              collapsed={sidebarCollapsed}
-            />
-            <NavItem
-              to="/admin/users"
-              icon={<Users className="h-5 w-5" />}
-              label="Users"
-              collapsed={sidebarCollapsed}
-            />
           </div>
         )}
 

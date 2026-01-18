@@ -1,0 +1,162 @@
+# Production environment overrides
+# Usage: helm install velox ./helm/velox -f ./helm/velox/values-prod.yaml
+
+replicaCount: 3
+
+image:
+  pullPolicy: Always
+  tag: "2.0.0"
+
+# Enable horizontal pod autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Production resource limits
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 1000m
+    memory: 1Gi
+
+# Production-grade probes
+livenessProbe:
+  initialDelaySeconds: 90
+  periodSeconds: 15
+  timeoutSeconds: 10
+  failureThreshold: 5
+
+readinessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+config:
+  nodeEnv: production
+  logLevel: info
+  corsOrigin: "https://yourdomain.com"
+
+# Production ingress with TLS
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "1000m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "900"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: velox.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: velox-tls
+      hosts:
+        - velox.yourdomain.com
+
+# Larger persistence for production
+persistence:
+  enabled: true
+  storageClass: "fast-ssd"
+  size: 100Gi
+
+# Production MongoDB with replication
+mongodb:
+  enabled: true
+  architecture: replicaset
+  replicaCount: 3
+  auth:
+    enabled: true
+    # IMPORTANT: Set these via external secrets manager in production
+    rootPassword: "CHANGEME-use-external-secrets"
+    password: "CHANGEME-use-external-secrets"
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 50Gi
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+
+# Production Redis with replication
+redis:
+  enabled: true
+  architecture: replication
+  auth:
+    enabled: true
+    # IMPORTANT: Set this via external secrets manager in production
+    password: "CHANGEME-use-external-secrets"
+  master:
+    persistence:
+      enabled: true
+      storageClass: "fast-ssd"
+      size: 10Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Production secrets - MUST be overridden with real values
+# Recommended: Use External Secrets Operator or sealed-secrets
+secrets:
+  # These are placeholders - NEVER commit real production secrets
+  sessionSecret: "CHANGEME-use-external-secrets-manager"
+  jwtSecret: "CHANGEME-use-external-secrets-manager"
+
+  # Production storage configuration
+  awsAccessKeyId: "CHANGEME"
+  awsSecretAccessKey: "CHANGEME"
+  awsRegion: "us-east-1"
+  awsS3Bucket: "velox-production-bucket"
+
+  # Production OAuth
+  googleClientId: "CHANGEME"
+  googleClientSecret: "CHANGEME"
+  googleCallbackUrl: "https://velox.yourdomain.com/api/v1/auth/google/callback"
+
+  # Production SMTP
+  smtpHost: "smtp.yourdomain.com"
+  smtpPort: "587"
+  smtpSecure: "true"
+  smtpUser: "CHANGEME"
+  smtpPassword: "CHANGEME"
+  emailFrom: "Velox <noreply@yourdomain.com>"
+
+# Pod disruption budget for high availability
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Network policies for security
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress

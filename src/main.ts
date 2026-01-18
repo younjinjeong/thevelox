@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import compression from 'compression';
+import * as bodyParser from 'body-parser';
 import { AppModule } from './app.module';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
@@ -12,9 +13,12 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   // Create Winston logger
+  const logLevel = process.env.LOG_LEVEL || 'info';
+
   const logger = WinstonModule.createLogger({
     transports: [
       new winston.transports.Console({
+        level: logLevel,
         format: winston.format.combine(
           winston.format.timestamp(),
           winston.format.colorize(),
@@ -52,6 +56,10 @@ async function bootstrap() {
 
   // Compression
   app.use(compression());
+
+  // Increase body parser limits for large file uploads (500MB)
+  app.use(bodyParser.json({ limit: '500mb' }));
+  app.use(bodyParser.urlencoded({ limit: '500mb', extended: true }));
 
   // CORS
   app.enableCors({

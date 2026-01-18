@@ -15,9 +15,14 @@ import {
   UseInterceptors,
   Res,
   StreamableFile,
+  PayloadTooLargeException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import { Response } from 'express';
 import { Readable } from 'stream';
 import { FilesService } from './files.service';
@@ -35,6 +40,30 @@ import {
 } from './dto/file.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+// Multer configuration for large file uploads (500MB limit)
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB in bytes
+const UPLOAD_TEMP_DIR = path.join(os.tmpdir(), 'velox-uploads');
+
+// Ensure temp directory exists
+if (!fs.existsSync(UPLOAD_TEMP_DIR)) {
+  fs.mkdirSync(UPLOAD_TEMP_DIR, { recursive: true });
+}
+
+const multerConfig = {
+  storage: diskStorage({
+    destination: UPLOAD_TEMP_DIR,
+    filename: (req, file, cb) => {
+      // Generate unique filename with timestamp
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      const ext = path.extname(file.originalname);
+      cb(null, `upload-${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: {
+    fileSize: MAX_FILE_SIZE,
+  },
+};
+
 @ApiTags('files')
 @Controller('files')
 @UseGuards(JwtAuthGuard)
@@ -43,9 +72,9 @@ export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerConfig))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload a file to a box' })
+  @ApiOperation({ summary: 'Upload a file to a box (max 500MB)' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -60,6 +89,7 @@ export class FilesController {
   })
   @ApiResponse({ status: 201, description: 'File uploaded successfully', type: FileUploadResponseDto })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 413, description: 'File too large (max 500MB)' })
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Body() uploadDto: UploadFileDto,
@@ -70,8 +100,8 @@ export class FilesController {
     }
 
     try {
-      // Convert buffer to stream
-      const stream = Readable.from(file.buffer);
+      // Create read stream from disk-stored file
+      const stream = fs.createReadStream(file.path);
 
       const uploadedFile = await this.filesService.upload(
         uploadDto.boxId,
@@ -87,11 +117,20 @@ export class FilesController {
         },
       );
 
+      // Clean up temp file after upload
+      fs.unlink(file.path, (err) => {
+        if (err) console.error('Failed to delete temp file:', err);
+      });
+
       return {
         success: true,
         file: this.mapToResponseDto(uploadedFile),
       };
     } catch (error: any) {
+      // Clean up temp file on error
+      if (file.path) {
+        fs.unlink(file.path, () => {});
+      }
       return {
         success: false,
         message: error.message,
@@ -100,9 +139,9 @@ export class FilesController {
   }
 
   @Post(':id/version')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerConfig))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload a new version of an existing file' })
+  @ApiOperation({ summary: 'Upload a new version of an existing file (max 500MB)' })
   @ApiParam({ name: 'id', description: 'File ID' })
   @ApiBody({
     schema: {
@@ -115,6 +154,7 @@ export class FilesController {
   })
   @ApiResponse({ status: 200, description: 'Version uploaded successfully', type: FileResponseDto })
   @ApiResponse({ status: 404, description: 'File not found' })
+  @ApiResponse({ status: 413, description: 'File too large (max 500MB)' })
   async uploadVersion(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -125,11 +165,25 @@ export class FilesController {
       throw new Error('No file provided');
     }
 
-    const stream = Readable.from(file.buffer);
+    try {
+      // Create read stream from disk-stored file
+      const stream = fs.createReadStream(file.path);
 
-    const updatedFile = await this.filesService.uploadVersion(id, stream, file.size, req.user.userId, description);
+      const updatedFile = await this.filesService.uploadVersion(id, stream, file.size, req.user.userId, description);
 
-    return this.mapToResponseDto(updatedFile);
+      // Clean up temp file after upload
+      fs.unlink(file.path, (err) => {
+        if (err) console.error('Failed to delete temp file:', err);
+      });
+
+      return this.mapToResponseDto(updatedFile);
+    } catch (error: any) {
+      // Clean up temp file on error
+      if (file.path) {
+        fs.unlink(file.path, () => {});
+      }
+      throw error;
+    }
   }
 
   @Get('search')
@@ -172,6 +226,23 @@ export class FilesController {
   async checkFilenames(@Body() dto: CheckFilenamesDto, @Request() req): Promise<FileResponseDto[]> {
     const filenames = dto.filenames.split(',').map((f) => f.trim());
     const files = await this.filesService.checkFilenames(dto.boxId, filenames, req.user.userId);
+    return files.map((file) => this.mapToResponseDto(file));
+  }
+
+  @Get('starred')
+  @ApiOperation({ summary: 'Get starred files for current user' })
+  @ApiResponse({ status: 200, description: 'Starred files retrieved successfully', type: [FileResponseDto] })
+  async findStarred(@Request() req): Promise<FileResponseDto[]> {
+    const files = await this.filesService.findStarred(req.user.userId);
+    return files.map((file) => this.mapToResponseDto(file));
+  }
+
+  @Get('recent')
+  @ApiOperation({ summary: 'Get recent files for current user' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of files to return (default: 20)' })
+  @ApiResponse({ status: 200, description: 'Recent files retrieved successfully', type: [FileResponseDto] })
+  async findRecent(@Request() req, @Query('limit') limit?: number): Promise<FileResponseDto[]> {
+    const files = await this.filesService.findRecent(req.user.userId, limit || 20);
     return files.map((file) => this.mapToResponseDto(file));
   }
 
@@ -250,6 +321,17 @@ export class FilesController {
     return this.mapToResponseDto(file);
   }
 
+  @Post(':id/star')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Toggle star status for a file' })
+  @ApiParam({ name: 'id', description: 'File ID' })
+  @ApiResponse({ status: 200, description: 'Star status toggled successfully', type: FileResponseDto })
+  @ApiResponse({ status: 404, description: 'File not found' })
+  async toggleStar(@Param('id') id: string, @Request() req): Promise<FileResponseDto> {
+    const file = await this.filesService.toggleStar(id, req.user.userId);
+    return this.mapToResponseDto(file);
+  }
+
   @Delete(':id/permanent')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Permanently delete a file and its storage' })
@@ -313,6 +395,7 @@ export class FilesController {
       isImage: file.isImage,
       isDocument: file.isDocument,
       link: file.link,
+      starred: file.starred || false,
     };
   }
 }

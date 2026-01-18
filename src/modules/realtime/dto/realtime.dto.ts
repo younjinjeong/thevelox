@@ -14,6 +14,12 @@ export enum EventType {
   BOX_MEMBER_ADDED = 'box:member:added',
   BOX_MEMBER_REMOVED = 'box:member:removed',
 
+  // Note events
+  NOTE_CREATED = 'note:created',
+  NOTE_UPDATED = 'note:updated',
+  NOTE_DELETED = 'note:deleted',
+  NOTE_POSITION_CHANGED = 'note:position',
+
   // User events
   USER_ONLINE = 'user:online',
   USER_OFFLINE = 'user:offline',

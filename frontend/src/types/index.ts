@@ -60,32 +60,55 @@ export interface CreateBoxData {
   isPublic?: boolean;
 }
 
-// File types
+// File types - matches backend FileResponseDto
 export interface FileItem {
   id: string;
+  box: string; // Box ID
+  members: string[]; // Member user IDs
+  container: string; // Storage container name
   name: string;
-  originalName: string;
-  mimeType: string;
+  ext?: string; // File extension
+  mime?: string; // MIME type
   size: number;
-  extension: string;
-  thumbnail?: string;
-  boxId: string;
-  uploadedBy: User;
+  sizeFormatted: string; // Human-readable size
+  description?: string;
   tags: string[];
-  isStarred: boolean;
-  isTrashed: boolean;
-  version: number;
-  versions?: FileVersion[];
-  createdAt: string;
-  updatedAt: string;
+  status: number; // 1=ACTIVE, 2=DELETED
+  type: number; // 1=MEMBER_INSERT, 2=PUBLIC_INSERT
+  author: string; // Author user ID
+  authorName?: string;
+  lastModifyUser?: string;
+  lastModifyUsername?: string;
+  uploadDate: string;
+  lastModifyDate: string;
+  isSended: boolean;
+  isReceived: boolean;
+  images?: {
+    width?: number;
+    height?: number;
+    thumbnail?: string;
+  };
+  public?: {
+    link?: string;
+    expiresAt?: string;
+  };
+  versions: FileVersion[];
+  hasVersions: boolean;
+  versionCount: number;
+  isImage: boolean;
+  isDocument: boolean;
+  link?: string;
+  starred?: boolean;
 }
 
 export interface FileVersion {
-  id: string;
-  version: number;
+  _id: string;
   size: number;
-  uploadedBy: User;
-  createdAt: string;
+  uploadDate: string;
+  uploadUser: string;
+  uploadUsername?: string;
+  description?: string;
+  mime?: string;
 }
 
 export interface UploadProgress {

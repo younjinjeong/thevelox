@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
-import { Save, TestTube2, Server, Cloud, Database } from 'lucide-react';
+import { Save, TestTube2, Server, Cloud, Database, HardDrive } from 'lucide-react';
 import { clsx } from 'clsx';
 import { adminService, StorageSettings } from '@/services/adminService';
 import { Button, Input } from '@/components/ui';
 
-type ProviderType = 's3' | 'gcs' | 'minio';
+type ProviderType = 's3' | 'gcs' | 'minio' | 'openstack';
 
 const providers: { id: ProviderType; name: string; icon: React.ReactNode }[] = [
   { id: 'minio', name: 'MinIO', icon: <Server className="h-4 w-4" /> },
   { id: 's3', name: 'AWS S3', icon: <Cloud className="h-4 w-4" /> },
   { id: 'gcs', name: 'Google Cloud', icon: <Database className="h-4 w-4" /> },
+  { id: 'openstack', name: 'OpenStack Swift', icon: <HardDrive className="h-4 w-4" /> },
 ];
 
 export function AdminStoragePage() {
@@ -96,6 +97,13 @@ export function AdminStoragePage() {
     setFormData((prev) => ({
       ...prev,
       gcs: { ...prev.gcs!, [field]: value },
+    }));
+  };
+
+  const updateOpenstackField = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      openstack: { ...prev.openstack!, [field]: value },
     }));
   };
 
@@ -250,6 +258,47 @@ export function AdminStoragePage() {
                 placeholder='{"type": "service_account", ...}'
                 value={formData.gcs?.credentials || ''}
                 onChange={(e) => updateGcsField('credentials', e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeProvider === 'openstack' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-slate-900 dark:text-white">
+              OpenStack Swift Configuration
+            </h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                label="Keystone Auth URL"
+                placeholder="http://keystone:5000/v2.0"
+                value={formData.openstack?.authUrl || ''}
+                onChange={(e) => updateOpenstackField('authUrl', e.target.value)}
+              />
+              <Input
+                label="Tenant ID"
+                placeholder="your-tenant-id"
+                value={formData.openstack?.tenantId || ''}
+                onChange={(e) => updateOpenstackField('tenantId', e.target.value)}
+              />
+              <Input
+                label="Username"
+                placeholder="swift-username"
+                value={formData.openstack?.username || ''}
+                onChange={(e) => updateOpenstackField('username', e.target.value)}
+              />
+              <Input
+                label="Password"
+                type="password"
+                placeholder="********"
+                value={formData.openstack?.password || ''}
+                onChange={(e) => updateOpenstackField('password', e.target.value)}
+              />
+              <Input
+                label="Container Name"
+                placeholder="velox"
+                value={formData.openstack?.container || ''}
+                onChange={(e) => updateOpenstackField('container', e.target.value)}
               />
             </div>
           </div>
